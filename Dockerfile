@@ -32,9 +32,9 @@ RUN npm prune --production
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nextjs -u 1001
 
-# Create data directory and set permissions
-RUN mkdir -p /app/data/audio && \
-    chown -R nextjs:nodejs /app/data
+# Create data and logs directories and set permissions
+RUN mkdir -p /app/data/audio /app/logs && \
+    chown -R nextjs:nodejs /app/data /app/logs
 
 # Switch to non-root user
 USER nextjs
