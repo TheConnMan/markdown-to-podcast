@@ -27,12 +27,16 @@ describe('Express Server', () => {
 
   test('API key authentication success', async () => {
     process.env['API_KEY'] = 'test-key';
+    
     const response = await request(app)
       .post('/api/generate')
       .set('X-API-Key', 'test-key')
       .send({ content: '# Test Title\n\nThis is a test content that is long enough.' });
+    
+    // The mock should make this succeed
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
+    expect(response.body.episodeId).toBeDefined();
   });
 
   test('API generate validates input', async () => {

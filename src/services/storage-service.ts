@@ -19,7 +19,7 @@ export class StorageService {
       
       // Run integrity check in background
       setImmediate(() => {
-        this.storageManager.verifyIntegrity().then(result => {
+        void this.storageManager.verifyIntegrity().then(result => {
           if (!result.valid) {
             console.warn(`Storage integrity issues detected: ${result.issues.join(', ')}`);
           }

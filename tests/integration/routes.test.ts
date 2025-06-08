@@ -25,6 +25,7 @@ describe('API Routes Integration', () => {
       .set('X-API-Key', API_KEY)
       .send({ content: 'Test markdown content' });
     
+    // The mock should make this succeed
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
     expect(response.body.episodeId).toBeDefined();
@@ -36,8 +37,10 @@ describe('API Routes Integration', () => {
       .set('X-API-Key', API_KEY)
       .send({ url: 'https://example.com' });
     
+    // The mock should make this succeed
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
+    expect(response.body.episodeId).toBeDefined();
   });
 
   test('GET /podcast/:uuid validates UUID', async () => {

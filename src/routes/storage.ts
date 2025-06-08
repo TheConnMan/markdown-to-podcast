@@ -8,7 +8,14 @@ const storageService = new StorageService();
 // Get episode by ID
 router.get('/episodes/:id', authenticateKey, async (req: AuthenticatedRequest, res) => {
   try {
-    const { id } = req.params;
+    const id = req.params['id'];
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Episode ID is required',
+      });
+    }
+    
     const episode = await storageService.getEpisode(id);
     
     if (!episode) {
@@ -18,10 +25,10 @@ router.get('/episodes/:id', authenticateKey, async (req: AuthenticatedRequest, r
       });
     }
     
-    res.json({ episode });
+    return res.json({ episode });
   } catch (error) {
     console.error('Error getting episode:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to get episode',
     });
@@ -31,13 +38,13 @@ router.get('/episodes/:id', authenticateKey, async (req: AuthenticatedRequest, r
 // List episodes
 router.get('/episodes', authenticateKey, async (req: AuthenticatedRequest, res) => {
   try {
-    const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+    const limit = req.query['limit'] ? parseInt(req.query['limit'] as string) : undefined;
     const episodes = await storageService.listEpisodes(limit);
     
-    res.json({ episodes });
+    return res.json({ episodes });
   } catch (error) {
     console.error('Error listing episodes:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to list episodes',
     });
@@ -45,13 +52,13 @@ router.get('/episodes', authenticateKey, async (req: AuthenticatedRequest, res) 
 });
 
 // Get storage statistics
-router.get('/stats', authenticateKey, async (req: AuthenticatedRequest, res) => {
+router.get('/stats', authenticateKey, async (_req: AuthenticatedRequest, res) => {
   try {
     const stats = await storageService.getStats();
-    res.json({ stats });
+    return res.json({ stats });
   } catch (error) {
     console.error('Error getting stats:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to get storage statistics',
     });
@@ -59,13 +66,13 @@ router.get('/stats', authenticateKey, async (req: AuthenticatedRequest, res) => 
 });
 
 // Maintenance endpoint
-router.post('/maintenance', authenticateKey, async (req: AuthenticatedRequest, res) => {
+router.post('/maintenance', authenticateKey, async (_req: AuthenticatedRequest, res) => {
   try {
     const result = await storageService.performMaintenance();
-    res.json({ maintenance: result });
+    return res.json({ maintenance: result });
   } catch (error) {
     console.error('Error performing maintenance:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to perform maintenance',
     });

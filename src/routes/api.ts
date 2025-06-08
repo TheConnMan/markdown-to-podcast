@@ -1,18 +1,20 @@
 import { Router } from 'express';
-import { authenticateKey } from '../middleware/auth';
+import { authenticateKey, AuthenticatedRequest } from '../middleware/auth';
 import { GenerateRequest, GenerateResponse, ProcessedContent } from '../types';
 import { ContentProcessor } from '../content-processor';
 import { ContentValidator } from '../utils/validation';
+import { TTSService } from '../services/tts-service';
 
 const router = Router();
 const contentProcessor = new ContentProcessor();
+const ttsService = new TTSService();
 
 router.post(
   '/generate',
   authenticateKey,
-  async (req, res) => {
+  async (req: AuthenticatedRequest, res) => {
   try {
-    const { content, url } = req.body as GenerateRequest;
+    const { content, url, voice = 'neutral-wavenet' } = req.body as GenerateRequest & { voice?: string };
 
     if (!content && !url) {
       return res.status(400).json({
@@ -55,23 +57,40 @@ router.post(
       processedContent.text
     );
 
-    // TODO: Pass to audio generation (Task 05)
-    console.log(
-      `Processed content: "${processedContent.title}" (${processedContent.wordCount} words)`
-    );
+    // Generate audio
+    console.log('Starting audio generation...');
+    const audioResult = await ttsService.generateEpisodeAudio(processedContent, voice);
+    
+    console.log(`Audio generated: ${audioResult.fileName} (${audioResult.duration}s, ${audioResult.fileSize} bytes)`);
 
+    // TODO: Pass to storage management (Task 06)
+    
     const response: GenerateResponse = {
       success: true,
-      episodeId: 'placeholder-id',
-      message: `Content processed successfully: "${processedContent.title}"`,
+      episodeId: audioResult.episodeId,
+      message: `Episode generated successfully: "${processedContent.title}" (${audioResult.duration}s)`,
     };
 
     return res.json(response);
   } catch (error: unknown) {
-    console.error('Error processing content:', error);
+    console.error('Error generating episode:', error);
     return res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to process content',
+      message: error instanceof Error ? error.message : 'Failed to generate episode',
+    });
+  }
+});
+
+// New endpoint to get available voices
+router.get('/voices', authenticateKey, (_req: AuthenticatedRequest, res) => {
+  try {
+    const voices = ttsService.getAvailableVoices();
+    res.json({ voices });
+  } catch (error: unknown) {
+    console.error('Error getting voices:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get available voices',
     });
   }
 });

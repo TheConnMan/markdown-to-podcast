@@ -29,7 +29,11 @@ module.exports = {
   verbose: true,
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    'extra-googletts': '<rootDir>/tests/__mocks__/extra-googletts.js',
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(extra-googletts|music-metadata)/)',
+  ],
   testEnvironmentOptions: {
     NODE_ENV: 'test',
   },
