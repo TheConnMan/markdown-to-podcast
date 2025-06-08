@@ -314,12 +314,27 @@ export class AudioGenerator {
   private async concatenateAudioFiles(inputFiles: string[], outputPath: string): Promise<void> {
     const { execSync } = require('child_process');
     
+    // Verify all input files exist
+    for (const file of inputFiles) {
+      if (!fs.existsSync(file)) {
+        throw new Error(`Input file does not exist: ${file}`);
+      }
+    }
+    
     // Create a file list for FFmpeg
     const listFile = path.join(path.dirname(outputPath), `filelist-${Date.now()}.txt`);
-    const fileList = inputFiles.map(file => `file '${file}'`).join('\n');
+    // Use absolute paths and proper escaping for FFmpeg concat format
+    const fileList = inputFiles.map(file => {
+      const absolutePath = path.resolve(file);
+      // Escape single quotes in the path by replacing them with '\''
+      const escapedPath = absolutePath.replace(/'/g, "'\\''");
+      return `file '${escapedPath}'`;
+    }).join('\n');
     
     try {
       fs.writeFileSync(listFile, fileList);
+      logger.info(`Created filelist for concatenation: ${listFile}`);
+      logger.info(`Files to concatenate: ${inputFiles.length}`);
       
       // Use FFmpeg to concatenate the files
       const command = `ffmpeg -f concat -safe 0 -i "${listFile}" -c copy "${outputPath}"`;

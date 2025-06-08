@@ -27,6 +27,7 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   testTimeout: 30000,
   verbose: true,
+  maxWorkers: 1, // Run tests in serial to avoid race conditions
   
   // Module name mapping for absolute imports
   moduleNameMapper: {
