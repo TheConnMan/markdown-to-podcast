@@ -29,18 +29,20 @@ export class StorageManager {
   async saveEpisode(
     content: ProcessedContent,
     audioResult: AudioGenerationResult,
-    _sourceUrl?: string
+    sourceUrl?: string
   ): Promise<Episode> {
     const episode: Episode = {
       id: audioResult.episodeId,
       title: content.title,
       fileName: audioResult.fileName,
       filePath: audioResult.filePath,
+      audioPath: audioResult.fileName, // Just filename for RSS URLs
       duration: audioResult.duration,
       fileSize: audioResult.fileSize,
       createdAt: new Date(),
       sourceType: this.mapSourceType(content.sourceType),
       downloadCount: 0,
+      ...(sourceUrl && { sourceUrl }),
     };
 
     await this.withLock(async () => {
@@ -301,10 +303,10 @@ export class StorageManager {
 
   private mapSourceType(sourceType: ProcessedContent['sourceType']): Episode['sourceType'] {
     switch (sourceType) {
-      case 'markdown': return 'markdown';
+      case 'markdown': return 'paste';
       case 'html': return 'url';
       case 'artifact': return 'artifact';
-      default: return 'markdown';
+      default: return 'paste';
     }
   }
 

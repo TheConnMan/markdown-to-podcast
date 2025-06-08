@@ -17,16 +17,16 @@ export class StorageService {
   ): Promise<Episode> {
     try {
       const episode = await this.storageManager.saveEpisode(content, audioResult, sourceUrl);
-      
+
       // Run integrity check in background
       setImmediate(() => {
-        void this.storageManager.verifyIntegrity().then(result => {
+        void this.storageManager.verifyIntegrity().then((result) => {
           if (!result.valid) {
             logger.warn(`Storage integrity issues detected: ${result.issues.join(', ')}`);
           }
         });
       });
-      
+
       return episode;
     } catch (error) {
       logger.error('Failed to create episode:', error);
@@ -51,10 +51,11 @@ export class StorageService {
 
   async getStats(): Promise<StorageStats> {
     const stats = await this.storageManager.getStorageStats();
-    
+
     return {
       ...stats,
-      averageEpisodeDuration: stats.totalEpisodes > 0 ? stats.totalDuration / stats.totalEpisodes : 0,
+      averageEpisodeDuration:
+        stats.totalEpisodes > 0 ? stats.totalDuration / stats.totalEpisodes : 0,
       averageFileSize: stats.totalEpisodes > 0 ? stats.totalSize / stats.totalEpisodes : 0,
     };
   }
@@ -65,12 +66,12 @@ export class StorageService {
     issues: string[];
   }> {
     logger.info('Starting storage maintenance...');
-    
+
     const orphanedFilesRemoved = await this.storageManager.cleanupOrphanedFiles();
     const integrity = await this.storageManager.verifyIntegrity();
-    
+
     logger.info(`Storage maintenance completed. Removed ${orphanedFilesRemoved} orphaned files.`);
-    
+
     return {
       orphanedFilesRemoved,
       integrityValid: integrity.valid,

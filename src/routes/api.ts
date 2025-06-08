@@ -10,12 +10,13 @@ const router = Router();
 const contentProcessor = new ContentProcessor();
 const ttsService = new TTSService();
 
-router.post(
-  '/generate',
-  authenticateKey,
-  async (req: AuthenticatedRequest, res) => {
+router.post('/generate', authenticateKey, async (req: AuthenticatedRequest, res) => {
   try {
-    const { content, url, voice = 'neutral-wavenet' } = req.body as GenerateRequest & { voice?: string };
+    const {
+      content,
+      url,
+      voice = 'neutral-wavenet',
+    } = req.body as GenerateRequest & { voice?: string };
 
     if (!content && !url) {
       return res.status(400).json({
@@ -61,11 +62,13 @@ router.post(
     // Generate audio
     logger.info('Starting audio generation...');
     const audioResult = await ttsService.generateEpisodeAudio(processedContent, voice);
-    
-    logger.info(`Audio generated: ${audioResult.fileName} (${audioResult.duration}s, ${audioResult.fileSize} bytes)`);
+
+    logger.info(
+      `Audio generated: ${audioResult.fileName} (${audioResult.duration}s, ${audioResult.fileSize} bytes)`
+    );
 
     // TODO: Pass to storage management (Task 06)
-    
+
     const response: GenerateResponse = {
       success: true,
       episodeId: audioResult.episodeId,

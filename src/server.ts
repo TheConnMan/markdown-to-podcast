@@ -15,6 +15,7 @@ import apiRoutes from './routes/api';
 import shareRoutes from './routes/share';
 import podcastRoutes from './routes/podcast';
 import audioRoutes from './routes/audio';
+import episodeRoutes from './routes/episode';
 
 const app = express();
 
@@ -53,6 +54,7 @@ app.use('/api', apiRoutes);
 app.use('/share', shareRoutes);
 app.use('/podcast', podcastRoutes);
 app.use('/audio', audioRoutes);
+app.use('/episode', episodeRoutes);
 
 app.get('/health', (_req, res) => {
   const health: HealthStatus = {

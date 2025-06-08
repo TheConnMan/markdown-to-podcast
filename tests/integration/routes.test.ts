@@ -1,3 +1,7 @@
+// Set environment variables before importing the app
+process.env['METADATA_FILE'] = './test-data/episodes.json';
+process.env['AUDIO_OUTPUT_DIR'] = './test-data/audio';
+
 import request from 'supertest';
 import app from '../../src/server';
 

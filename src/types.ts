@@ -21,9 +21,11 @@ export interface Episode {
   title: string;
   fileName: string;
   filePath: string;
+  audioPath: string; // For RSS feed audio URLs
   duration: number;
   fileSize: number;
-  sourceType: 'markdown' | 'url' | 'artifact';
+  sourceType: 'url' | 'artifact' | 'paste';
+  sourceUrl?: string; // Original URL if from web content
   createdAt: Date;
   downloadCount: number;
 }
@@ -113,7 +115,26 @@ export interface RSSConfig {
   siteUrl: string;
   author: string;
   language: string;
-  email: string;
+  email?: string;
+  category?: string;
+  explicit?: boolean;
+}
+
+// RSS validation result
+export interface RSSValidation {
+  valid: boolean;
+  errors: string[];
+  warnings?: string[];
+}
+
+// Feed statistics
+export interface FeedStats {
+  totalEpisodes: number;
+  totalDuration: number;
+  averageDuration: number;
+  oldestEpisode: Date | null;
+  newestEpisode: Date | null;
+  feedSize: number; // XML size in bytes
 }
 
 // Content processing types

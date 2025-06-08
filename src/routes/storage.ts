@@ -16,16 +16,16 @@ router.get('/episodes/:id', authenticateKey, async (req: AuthenticatedRequest, r
         message: 'Episode ID is required',
       });
     }
-    
+
     const episode = await storageService.getEpisode(id);
-    
+
     if (!episode) {
       return res.status(404).json({
         success: false,
         message: 'Episode not found',
       });
     }
-    
+
     return res.json({ episode });
   } catch (error) {
     logger.error('Error getting episode:', error);
@@ -41,7 +41,7 @@ router.get('/episodes', authenticateKey, async (req: AuthenticatedRequest, res) 
   try {
     const limit = req.query['limit'] ? parseInt(req.query['limit'] as string) : undefined;
     const episodes = await storageService.listEpisodes(limit);
-    
+
     return res.json({ episodes });
   } catch (error) {
     logger.error('Error listing episodes:', error);
