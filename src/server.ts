@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -6,12 +7,24 @@ import rateLimit from 'express-rate-limit';
 import { appConfig } from './config';
 import { HealthStatus } from './types';
 import packageJson from '../package.json';
+import { requestLogger } from './middleware/logging';
+import { errorHandler } from './middleware/error';
+
+import apiRoutes from './routes/api';
+import shareRoutes from './routes/share';
+import podcastRoutes from './routes/podcast';
+import audioRoutes from './routes/audio';
 
 const app = express();
 
+app.use(requestLogger);
 app.use(helmet());
 app.use(compression());
-app.use(cors());
+
+if (process.env['NODE_ENV'] === 'development') {
+  app.use(cors());
+}
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -22,7 +35,12 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, '../public')));
+
+app.use('/api', apiRoutes);
+app.use('/share', shareRoutes);
+app.use('/podcast', podcastRoutes);
+app.use('/audio', audioRoutes);
 
 app.get('/health', (_req, res) => {
   const health: HealthStatus = {
@@ -37,6 +55,12 @@ app.get('/health', (_req, res) => {
 
 app.get('/', (_req, res) => {
   res.sendFile('index.html', { root: './public' });
+});
+
+app.use(errorHandler);
+
+app.use('*', (_req, res) => {
+  res.status(404).json({ message: 'Route not found' });
 });
 
 const startServer = () => {
