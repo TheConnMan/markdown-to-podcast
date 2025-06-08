@@ -93,8 +93,8 @@ export class ContentProcessor {
         { selector: 'h1', options: { uppercase: false } },
         { selector: 'h2', options: { uppercase: false } },
         { selector: 'h3', options: { uppercase: false } },
-        { selector: 'pre', options: { ignoreHref: true } },
-        { selector: 'code', options: { ignoreHref: true } },
+        { selector: 'pre', format: 'skip' },
+        { selector: 'code', format: 'skip' },
       ],
     });
 
@@ -120,6 +120,13 @@ export class ContentProcessor {
     const text = htmlToText(mainContent.html() || '', {
       wordwrap: false,
       preserveNewlines: true,
+      selectors: [
+        { selector: 'h1', options: { uppercase: false } },
+        { selector: 'h2', options: { uppercase: false } },
+        { selector: 'h3', options: { uppercase: false } },
+        { selector: 'pre', format: 'skip' },
+        { selector: 'code', format: 'skip' },
+      ],
     });
 
     return {
