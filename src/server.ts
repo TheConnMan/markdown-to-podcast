@@ -9,6 +9,7 @@ import { HealthStatus } from './types';
 import packageJson from '../package.json';
 import { requestLogger } from './middleware/logging';
 import { errorHandler } from './middleware/error';
+import { logger } from './utils/logger';
 
 import apiRoutes from './routes/api';
 import shareRoutes from './routes/share';
@@ -65,13 +66,13 @@ app.use('*', (_req, res) => {
 
 const startServer = () => {
   const server = app.listen(appConfig.port, () => {
-    console.log(`Server running on port ${appConfig.port} in ${appConfig.nodeEnv} mode`);
+    logger.info(`Server running on port ${appConfig.port} in ${appConfig.nodeEnv} mode`);
   });
 
   const gracefulShutdown = (signal: string) => {
-    console.log(`Received ${signal}. Graceful shutdown...`);
+    logger.info(`Received ${signal}. Graceful shutdown...`);
     server.close(() => {
-      console.log('HTTP server closed.');
+      logger.info('HTTP server closed.');
       process.exit(0);
     });
   };

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import path from 'path';
 import fs from 'fs';
+import { logger } from '../utils/logger';
 
 const router = Router();
 
@@ -28,7 +29,7 @@ router.get('/:filename', (req, res) => {
     stream.pipe(res);
     return;
   } catch (error) {
-    console.error('Error serving audio file:', error);
+    logger.error('Error serving audio file:', error);
     return res.status(500).json({ message: 'Failed to serve audio file' });
   }
 });

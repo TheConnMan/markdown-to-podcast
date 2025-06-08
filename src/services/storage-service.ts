@@ -1,6 +1,7 @@
 import { StorageManager } from '../storage-manager';
 import { Episode, ProcessedContent, StorageStats } from '../types';
 import { AudioGenerationResult } from '../types';
+import { logger } from '../utils/logger';
 
 export class StorageService {
   private storageManager: StorageManager;
@@ -21,14 +22,14 @@ export class StorageService {
       setImmediate(() => {
         void this.storageManager.verifyIntegrity().then(result => {
           if (!result.valid) {
-            console.warn(`Storage integrity issues detected: ${result.issues.join(', ')}`);
+            logger.warn(`Storage integrity issues detected: ${result.issues.join(', ')}`);
           }
         });
       });
       
       return episode;
     } catch (error) {
-      console.error('Failed to create episode:', error);
+      logger.error('Failed to create episode:', error);
       throw new Error(`Storage error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -63,12 +64,12 @@ export class StorageService {
     integrityValid: boolean;
     issues: string[];
   }> {
-    console.log('Starting storage maintenance...');
+    logger.info('Starting storage maintenance...');
     
     const orphanedFilesRemoved = await this.storageManager.cleanupOrphanedFiles();
     const integrity = await this.storageManager.verifyIntegrity();
     
-    console.log(`Storage maintenance completed. Removed ${orphanedFilesRemoved} orphaned files.`);
+    logger.info(`Storage maintenance completed. Removed ${orphanedFilesRemoved} orphaned files.`);
     
     return {
       orphanedFilesRemoved,

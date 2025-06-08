@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticateKey, AuthenticatedRequest } from '../middleware/auth';
 import { StorageService } from '../services/storage-service';
+import { logger } from '../utils/logger';
 
 const router = Router();
 const storageService = new StorageService();
@@ -27,7 +28,7 @@ router.get('/episodes/:id', authenticateKey, async (req: AuthenticatedRequest, r
     
     return res.json({ episode });
   } catch (error) {
-    console.error('Error getting episode:', error);
+    logger.error('Error getting episode:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to get episode',
@@ -43,7 +44,7 @@ router.get('/episodes', authenticateKey, async (req: AuthenticatedRequest, res) 
     
     return res.json({ episodes });
   } catch (error) {
-    console.error('Error listing episodes:', error);
+    logger.error('Error listing episodes:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to list episodes',
@@ -57,7 +58,7 @@ router.get('/stats', authenticateKey, async (_req: AuthenticatedRequest, res) =>
     const stats = await storageService.getStats();
     return res.json({ stats });
   } catch (error) {
-    console.error('Error getting stats:', error);
+    logger.error('Error getting stats:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to get storage statistics',
@@ -71,7 +72,7 @@ router.post('/maintenance', authenticateKey, async (_req: AuthenticatedRequest, 
     const result = await storageService.performMaintenance();
     return res.json({ maintenance: result });
   } catch (error) {
-    console.error('Error performing maintenance:', error);
+    logger.error('Error performing maintenance:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to perform maintenance',

@@ -4,6 +4,7 @@ import { promisify } from 'util';
 import { Episode, EpisodesMetadata } from './types';
 import { AudioGenerationResult } from './types';
 import { ProcessedContent } from './types';
+import { logger } from './utils/logger';
 
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
@@ -58,7 +59,7 @@ export class StorageManager {
       await this.saveMetadata(metadata);
     });
 
-    console.log(`Episode saved: ${episode.title} (${episode.id})`);
+    logger.info(`Episode saved: ${episode.title} (${episode.id})`);
     return episode;
   }
 
@@ -95,10 +96,10 @@ export class StorageManager {
       try {
         if (fs.existsSync(audioFilePath)) {
           await unlink(audioFilePath);
-          console.log(`Deleted audio file: ${episode.fileName}`);
+          logger.info(`Deleted audio file: ${episode.fileName}`);
         }
       } catch (error) {
-        console.warn(`Failed to delete audio file ${episode.fileName}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.warn(`Failed to delete audio file ${episode.fileName}: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
       
       // Remove from metadata
@@ -209,10 +210,10 @@ export class StorageManager {
       try {
         const filePath = path.join(this.audioDir, orphanedFile);
         await unlink(filePath);
-        console.log(`Cleaned up orphaned file: ${orphanedFile}`);
+        logger.info(`Cleaned up orphaned file: ${orphanedFile}`);
         cleanedCount++;
       } catch (error) {
-        console.warn(`Failed to clean up ${orphanedFile}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.warn(`Failed to clean up ${orphanedFile}: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
     
@@ -224,12 +225,12 @@ export class StorageManager {
     
     if (!fs.existsSync(dataDir)) {
       fs.mkdirSync(dataDir, { recursive: true });
-      console.log(`Created data directory: ${dataDir}`);
+      logger.info(`Created data directory: ${dataDir}`);
     }
     
     if (!fs.existsSync(this.audioDir)) {
       fs.mkdirSync(this.audioDir, { recursive: true });
-      console.log(`Created audio directory: ${this.audioDir}`);
+      logger.info(`Created audio directory: ${this.audioDir}`);
     }
   }
 
@@ -242,7 +243,7 @@ export class StorageManager {
       };
       
       await this.saveMetadata(initialMetadata);
-      console.log(`Initialized metadata file: ${this.metadataFile}`);
+      logger.info(`Initialized metadata file: ${this.metadataFile}`);
     }
   }
 
@@ -259,7 +260,7 @@ export class StorageManager {
       
       return metadata;
     } catch (error) {
-      console.error(`Failed to load metadata: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      logger.error(`Failed to load metadata: ${error instanceof Error ? error.message : 'Unknown error'}`);
       // Return empty metadata if file is corrupted
       return {
         episodes: [],
@@ -286,16 +287,16 @@ export class StorageManager {
       try {
         if (fs.existsSync(episode.filePath)) {
           await unlink(episode.filePath);
-          console.log(`Cleaned up old episode: ${episode.title} (${episode.fileName})`);
+          logger.info(`Cleaned up old episode: ${episode.title} (${episode.fileName})`);
         }
       } catch (error) {
-        console.warn(`Failed to delete old audio file ${episode.fileName}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.warn(`Failed to delete old audio file ${episode.fileName}: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
     
     // Remove from metadata
     metadata.episodes = metadata.episodes.slice(0, this.maxEpisodes);
-    console.log(`Cleaned up ${episodesToDelete.length} old episodes`);
+    logger.info(`Cleaned up ${episodesToDelete.length} old episodes`);
   }
 
   private mapSourceType(sourceType: ProcessedContent['sourceType']): Episode['sourceType'] {
@@ -324,7 +325,7 @@ export class StorageManager {
           try {
             fs.unlinkSync(this.lockFile);
           } catch (error) {
-            console.warn(`Failed to remove lock file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            logger.warn(`Failed to remove lock file: ${error instanceof Error ? error.message : 'Unknown error'}`);
           }
         }
       } catch (error: any) {

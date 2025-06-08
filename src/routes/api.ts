@@ -4,6 +4,7 @@ import { GenerateRequest, GenerateResponse, ProcessedContent } from '../types';
 import { ContentProcessor } from '../content-processor';
 import { ContentValidator } from '../utils/validation';
 import { TTSService } from '../services/tts-service';
+import { logger } from '../utils/logger';
 
 const router = Router();
 const contentProcessor = new ContentProcessor();
@@ -58,10 +59,10 @@ router.post(
     );
 
     // Generate audio
-    console.log('Starting audio generation...');
+    logger.info('Starting audio generation...');
     const audioResult = await ttsService.generateEpisodeAudio(processedContent, voice);
     
-    console.log(`Audio generated: ${audioResult.fileName} (${audioResult.duration}s, ${audioResult.fileSize} bytes)`);
+    logger.info(`Audio generated: ${audioResult.fileName} (${audioResult.duration}s, ${audioResult.fileSize} bytes)`);
 
     // TODO: Pass to storage management (Task 06)
     
@@ -73,7 +74,7 @@ router.post(
 
     return res.json(response);
   } catch (error: unknown) {
-    console.error('Error generating episode:', error);
+    logger.error('Error generating episode:', error);
     return res.status(500).json({
       success: false,
       message: error instanceof Error ? error.message : 'Failed to generate episode',
@@ -87,7 +88,7 @@ router.get('/voices', authenticateKey, (_req: AuthenticatedRequest, res) => {
     const voices = ttsService.getAvailableVoices();
     res.json({ voices });
   } catch (error: unknown) {
-    console.error('Error getting voices:', error);
+    logger.error('Error getting voices:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get available voices',

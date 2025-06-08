@@ -2,6 +2,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { ProcessedContent, AudioConfig } from './types';
+import { logger } from './utils/logger';
 
 let googletts: any = null;
 try {
@@ -51,8 +52,8 @@ export class AudioGenerator {
     }
     
     try {
-      console.log(`Starting audio generation for: "${content.title}"`);
-      console.log(`Text length: ${content.text.length} characters`);
+      logger.info(`Starting audio generation for: "${content.title}"`);
+      logger.info(`Text length: ${content.text.length} characters`);
       
       // Prepare text for TTS
       const preparedText = this.prepareTextForTTS(content.text);
@@ -68,7 +69,7 @@ export class AudioGenerator {
         concurrency: 5, // Concurrent TTS requests
       });
       
-      console.log(`Audio generation completed: ${fileName}`);
+      logger.info(`Audio generation completed: ${fileName}`);
       
       // Extract metadata
       const duration = await this.extractAudioDuration(filePath);
@@ -98,7 +99,7 @@ export class AudioGenerator {
   private ensureOutputDirectory(): void {
     if (!fs.existsSync(this.outputDir)) {
       fs.mkdirSync(this.outputDir, { recursive: true });
-      console.log(`Created audio output directory: ${this.outputDir}`);
+      logger.info(`Created audio output directory: ${this.outputDir}`);
     }
   }
 
@@ -149,7 +150,7 @@ export class AudioGenerator {
       return Math.round(duration);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.warn(`Could not extract audio duration: ${errorMessage}`);
+      logger.warn(`Could not extract audio duration: ${errorMessage}`);
       // Fallback: estimate based on text length (150 words per minute)
       const wordsPerMinute = 150;
       const wordCount = this.countWords(filePath);
@@ -163,7 +164,7 @@ export class AudioGenerator {
       return stats.size;
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.warn(`Could not get file size: ${errorMessage}`);
+      logger.warn(`Could not get file size: ${errorMessage}`);
       return 0;
     }
   }
@@ -219,14 +220,14 @@ export class AudioGenerator {
         
         for (const file of filesToDelete) {
           fs.unlinkSync(file.path);
-          console.log(`Deleted old audio file: ${file.name}`);
+          logger.info(`Deleted old audio file: ${file.name}`);
         }
         
-        console.log(`Cleaned up ${filesToDelete.length} old audio files`);
+        logger.info(`Cleaned up ${filesToDelete.length} old audio files`);
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`Failed to cleanup old files: ${errorMessage}`);
+      logger.error(`Failed to cleanup old files: ${errorMessage}`);
     }
   }
 }

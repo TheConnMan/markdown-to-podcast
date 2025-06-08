@@ -41,7 +41,8 @@
     "html-to-text": "^9.0.5",
     "markdown-it": "^14.1.0",
     "rss": "^1.2.2",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "@types/compression": "^1.7.2",

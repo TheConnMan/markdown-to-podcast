@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authenticateKey } from '../middleware/auth';
+import { logger } from '../utils/logger';
 
 const router = Router();
 
@@ -14,7 +15,7 @@ router.post('/', authenticateKey, (req, res) => {
 
     res.redirect(`/?${params.toString()}`);
   } catch (error) {
-    console.error('Error handling share:', error);
+    logger.error('Error handling share:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to handle share',

@@ -1,6 +1,7 @@
 import { AudioGenerator, AudioGenerationResult } from '../audio-generator';
 import { ProcessedContent, AudioConfig } from '../types';
 import * as fs from 'fs';
+import { logger } from '../utils/logger';
 
 export class TTSService {
   private audioGenerator: AudioGenerator;
@@ -40,7 +41,7 @@ export class TTSService {
       return result;
       
     } catch (error: unknown) {
-      console.error('TTS Service error:', error);
+      logger.error('TTS Service error:', error);
       
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       

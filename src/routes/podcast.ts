@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { logger } from '../utils/logger';
 
 const router = Router();
 
@@ -14,7 +15,7 @@ router.get('/:uuid', (req, res) => {
     res.set('Content-Type', 'application/rss+xml');
     return res.send('<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"></rss>');
   } catch (error) {
-    console.error('Error serving RSS feed:', error);
+    logger.error('Error serving RSS feed:', error);
     return res.status(500).json({ message: 'Failed to generate feed' });
   }
 });
