@@ -5,6 +5,7 @@ import { ContentProcessor } from '../content-processor';
 import { ContentValidator } from '../utils/validation';
 import { TTSService } from '../services/tts-service';
 import { logger } from '../utils/logger';
+import { appConfig } from '../config';
 
 const router = Router();
 const contentProcessor = new ContentProcessor();
@@ -95,6 +96,22 @@ router.get('/voices', authenticateKey, (_req: AuthenticatedRequest, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to get available voices',
+    });
+  }
+});
+
+// Config endpoint to get podcast UUID
+router.get('/config', (_req, res) => {
+  try {
+    res.json({
+      podcastUuid: appConfig.podcastUuid,
+      baseUrl: appConfig.baseUrl,
+    });
+  } catch (error: unknown) {
+    logger.error('Error getting config:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get config',
     });
   }
 });

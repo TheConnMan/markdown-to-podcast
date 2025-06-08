@@ -2,9 +2,11 @@ class PodcastGenerator {
     constructor() {
         this.apiKey = null;
         this.baseUrl = window.location.origin;
+        this.podcastUuid = null;
         
         this.initializeElements();
         this.loadApiKey();
+        this.loadConfig();
         this.setupEventListeners();
         this.handleShareTarget();
         this.setupOfflineDetection();
@@ -44,6 +46,10 @@ class PodcastGenerator {
         this.resultTitle = document.getElementById('result-title');
         this.rssUrl = document.getElementById('rss-url');
         this.copyRssBtn = document.getElementById('copy-rss-url');
+        
+        // Main RSS URL elements
+        this.mainRssUrl = document.getElementById('main-rss-url');
+        this.copyMainRssBtn = document.getElementById('copy-main-rss-url');
     }
 
     setupEventListeners() {
@@ -62,6 +68,7 @@ class PodcastGenerator {
         
         // Copy RSS URL
         this.copyRssBtn.addEventListener('click', () => this.copyRssUrl());
+        this.copyMainRssBtn.addEventListener('click', () => this.copyMainRssUrl());
         
         // URL input pre-fill from query params
         this.prefillFromQueryParams();
@@ -94,6 +101,32 @@ class PodcastGenerator {
 
     hideApiKeySetup() {
         this.apiKeySetup.classList.add('hidden');
+    }
+
+    async loadConfig() {
+        try {
+            const response = await fetch('/api/config');
+            if (response.ok) {
+                const config = await response.json();
+                this.podcastUuid = config.podcastUuid;
+                this.updateMainRssUrl();
+            } else {
+                console.warn('Failed to load config, using fallback UUID');
+                this.podcastUuid = 'abcd1234-5678-90ef-ghij-klmnop123456';
+                this.updateMainRssUrl();
+            }
+        } catch (error) {
+            console.warn('Error loading config:', error);
+            this.podcastUuid = 'abcd1234-5678-90ef-ghij-klmnop123456';
+            this.updateMainRssUrl();
+        }
+    }
+
+    updateMainRssUrl() {
+        if (this.mainRssUrl && this.podcastUuid) {
+            const rssUrl = `${this.baseUrl}/podcast/${this.podcastUuid}`;
+            this.mainRssUrl.value = rssUrl;
+        }
     }
 
     toggleInputType() {
@@ -232,7 +265,7 @@ class PodcastGenerator {
         this.resultTitle.textContent = title;
         
         // Generate RSS URL
-        const rssUrl = `${this.baseUrl}/podcast/${this.getPodcastUuid()}`;
+        const rssUrl = `${this.baseUrl}/podcast/${this.podcastUuid || 'abcd1234-5678-90ef-ghij-klmnop123456'}`;
         this.rssUrl.value = rssUrl;
         
         this.resultsDiv.classList.remove('hidden');
@@ -280,11 +313,27 @@ class PodcastGenerator {
         }
     }
 
-    getPodcastUuid() {
-        // This should match the PODCAST_UUID from the server
-        // In a real app, this might be fetched from a config endpoint
-        return 'abcd1234-5678-90ef-ghij-klmnop123456';
+    async copyMainRssUrl() {
+        try {
+            await navigator.clipboard.writeText(this.mainRssUrl.value);
+            
+            // Temporary feedback
+            const originalText = this.copyMainRssBtn.textContent;
+            this.copyMainRssBtn.textContent = 'Copied!';
+            this.copyMainRssBtn.classList.add('bg-green-50', 'text-green-700');
+            
+            setTimeout(() => {
+                this.copyMainRssBtn.textContent = originalText;
+                this.copyMainRssBtn.classList.remove('bg-green-50', 'text-green-700');
+            }, 2000);
+            
+        } catch (error) {
+            console.error('Copy failed:', error);
+            // Fallback: select the text
+            this.mainRssUrl.select();
+        }
     }
+
 
     handleShareTarget() {
         // Check if app was opened via share target

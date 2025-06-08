@@ -98,6 +98,25 @@
             </div>
         </div>
 
+        <!-- Podcast Feed URL -->
+        <div id="podcast-url-section" class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Your Podcast Feed</h2>
+            <p class="text-sm text-gray-600 mb-3">
+                Add this RSS URL to your podcast app to listen to your generated episodes:
+            </p>
+            <div class="flex items-center space-x-2">
+                <input type="text" 
+                       id="main-rss-url" 
+                       readonly
+                       placeholder="Loading podcast URL..."
+                       class="flex-1 rounded-md border-gray-300 bg-white text-sm font-mono">
+                <button id="copy-main-rss-url" 
+                        class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-podcast-blue">
+                    Copy
+                </button>
+            </div>
+        </div>
+
         <!-- Generation Form -->
         <div id="generation-form" class="bg-white rounded-lg shadow-md p-6">
             <form id="podcast-form">
