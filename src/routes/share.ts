@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import { authenticateKey } from '../middleware/auth';
 import { logger } from '../utils/logger';
 
 const router = Router();
