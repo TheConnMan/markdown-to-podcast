@@ -10,7 +10,7 @@ router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const episode = await storageService.getEpisode(id);
-    
+
     if (!episode) {
       return res.status(404).send(`
         <!DOCTYPE html>
@@ -23,7 +23,7 @@ router.get('/:id', async (req, res) => {
         </html>
       `);
     }
-    
+
     // Generate simple HTML page for episode
     const html = `
       <!DOCTYPE html>
@@ -49,9 +49,8 @@ router.get('/:id', async (req, res) => {
       </body>
       </html>
     `;
-    
+
     return res.send(html);
-    
   } catch (error) {
     logger.error('Error serving episode page:', error);
     return res.status(500).send('Error loading episode');
