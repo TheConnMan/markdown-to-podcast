@@ -3,12 +3,17 @@ import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { ProcessedContent, AudioConfig } from './types';
 import { logger } from './utils/logger';
+import { TextToSpeechClient, TextToSpeechLongAudioSynthesizeClient } from '@google-cloud/text-to-speech';
 
-let googletts: any = null;
+let ttsClient: TextToSpeechClient | null = null;
+let longAudioClient: TextToSpeechLongAudioSynthesizeClient | null = null;
+
 try {
-  googletts = require('extra-googletts');
+  ttsClient = new TextToSpeechClient();
+  longAudioClient = new TextToSpeechLongAudioSynthesizeClient();
+  logger.info('Google Cloud Text-to-Speech clients initialized successfully');
 } catch (error) {
-  logger.warn('extra-googletts module could not be loaded. TTS functionality will be disabled.', error);
+  logger.warn('Google Cloud Text-to-Speech clients could not be initialized. TTS functionality will be disabled.', error);
 }
 
 export interface AudioGenerationResult {
@@ -47,8 +52,8 @@ export class AudioGenerator {
     
     const audioConfig = { ...this.defaultConfig, ...config };
     
-    if (!googletts) {
-      throw new Error('TTS functionality is not available. The extra-googletts module could not be loaded.');
+    if (!ttsClient) {
+      throw new Error('TTS functionality is not available. Google Cloud Text-to-Speech client could not be initialized.');
     }
     
     try {
@@ -58,16 +63,23 @@ export class AudioGenerator {
       // Prepare text for TTS
       const preparedText = this.prepareTextForTTS(content.text);
       
-      // Generate audio using extra-googletts
-      await googletts(filePath, preparedText, {
-        voice: audioConfig.voice,
-        audioEncoding: audioConfig.audioEncoding,
-        pitch: audioConfig.pitch,
-        speakingRate: audioConfig.speakingRate,
-        log: true, // Enable logging
-        retries: 3, // Retry failed requests
-        concurrency: 5, // Concurrent TTS requests
-      });
+      // Check text length and choose appropriate synthesis method
+      const regularLimit = 4500; // Regular TTS limit with safety buffer
+      const longAudioLimit = 900000; // Long Audio Synthesis limit (1MB with buffer)
+      
+      if (preparedText.length <= regularLimit) {
+        // Use regular TTS for short content
+        logger.info('Using regular TTS synthesis');
+        await this.generateSingleChunk(preparedText, filePath, audioConfig);
+      } else if (preparedText.length <= longAudioLimit && longAudioClient) {
+        // Use Long Audio Synthesis for medium-long content
+        logger.info('Using Long Audio Synthesis for large content');
+        await this.generateLongAudio(preparedText, filePath, audioConfig, episodeId);
+      } else {
+        // Fall back to chunking for very long content or if Long Audio not available
+        logger.info('Using chunked synthesis as fallback');
+        await this.generateChunkedAudio(preparedText, filePath, audioConfig, episodeId);
+      }
       
       logger.info(`Audio generation completed: ${fileName}`);
       
@@ -151,10 +163,9 @@ export class AudioGenerator {
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       logger.warn(`Could not extract audio duration: ${errorMessage}`);
-      // Fallback: estimate based on text length (150 words per minute)
-      const wordsPerMinute = 150;
-      const wordCount = this.countWords(filePath);
-      return Math.round((wordCount / wordsPerMinute) * 60);
+      // Fallback: return default duration
+      logger.warn('Using fallback duration estimation');
+      return 60; // Default fallback
     }
   }
 
@@ -169,8 +180,158 @@ export class AudioGenerator {
     }
   }
 
-  private countWords(text: string): number {
-    return text.split(/\s+/).filter(word => word.length > 0).length;
+
+  private async generateSingleChunk(
+    text: string, 
+    outputPath: string, 
+    audioConfig: AudioConfig
+  ): Promise<void> {
+    if (!ttsClient) {
+      throw new Error('TTS client not initialized');
+    }
+
+    const request = {
+      input: { text },
+      voice: {
+        languageCode: 'en-US',
+        name: audioConfig.voice.name,
+        ssmlGender: audioConfig.voice.gender as any,
+      },
+      audioConfig: {
+        audioEncoding: audioConfig.audioEncoding as any,
+        pitch: audioConfig.pitch,
+        speakingRate: audioConfig.speakingRate,
+      },
+    };
+
+    const [response] = await ttsClient.synthesizeSpeech(request);
+    
+    if (!response.audioContent) {
+      throw new Error('No audio content received from Google Cloud TTS');
+    }
+    
+    // Write the audio content to file
+    fs.writeFileSync(outputPath, response.audioContent, 'binary');
+  }
+
+  private async generateLongAudio(
+    text: string,
+    outputPath: string,
+    audioConfig: AudioConfig,
+    episodeId: string
+  ): Promise<void> {
+    if (!longAudioClient) {
+      throw new Error('Long Audio client not initialized');
+    }
+
+    // For this implementation, we'll fall back to chunking since Long Audio requires GCS
+    // In production, you'd set up GCS bucket and use Long Audio Synthesis
+    logger.warn('Long Audio Synthesis requires GCS setup, falling back to chunking');
+    await this.generateChunkedAudio(text, outputPath, audioConfig, episodeId);
+  }
+
+  private async generateChunkedAudio(
+    text: string,
+    outputPath: string,
+    audioConfig: AudioConfig,
+    episodeId: string
+  ): Promise<void> {
+    const maxChunkSize = 4500;
+    const chunks = this.splitTextIntoChunks(text, maxChunkSize);
+    const tempDir = path.join(this.outputDir, 'temp', episodeId);
+    
+    // Create temp directory
+    fs.mkdirSync(tempDir, { recursive: true });
+    
+    try {
+      logger.info(`Splitting text into ${chunks.length} chunks for TTS generation`);
+      
+      // Generate audio for each chunk
+      const tempFiles: string[] = [];
+      for (let i = 0; i < chunks.length; i++) {
+        const chunkFile = path.join(tempDir, `chunk-${i.toString().padStart(3, '0')}.mp3`);
+        tempFiles.push(chunkFile);
+        
+        const chunk = chunks[i];
+        if (!chunk) continue;
+        
+        logger.info(`Generating audio for chunk ${i + 1}/${chunks.length} (${chunk.length} chars)`);
+        await this.generateSingleChunk(chunk, chunkFile, audioConfig);
+      }
+      
+      // Concatenate all chunks using FFmpeg
+      await this.concatenateAudioFiles(tempFiles, outputPath);
+      
+      logger.info(`Successfully concatenated ${chunks.length} audio chunks`);
+    } finally {
+      // Clean up temp files
+      try {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      } catch (error) {
+        logger.warn(`Failed to clean up temp directory: ${tempDir}`, error);
+      }
+    }
+  }
+
+  private splitTextIntoChunks(text: string, maxChunkSize: number): string[] {
+    const chunks: string[] = [];
+    let currentPos = 0;
+    
+    while (currentPos < text.length) {
+      let chunkEnd = currentPos + maxChunkSize;
+      
+      // If we're not at the end, try to break at a sentence boundary
+      if (chunkEnd < text.length) {
+        const sentenceEnd = text.lastIndexOf('.', chunkEnd);
+        const questionEnd = text.lastIndexOf('?', chunkEnd);
+        const exclamationEnd = text.lastIndexOf('!', chunkEnd);
+        
+        const bestBreak = Math.max(sentenceEnd, questionEnd, exclamationEnd);
+        
+        // If we found a good sentence break and it's not too far back
+        if (bestBreak > currentPos + maxChunkSize * 0.7) {
+          chunkEnd = bestBreak + 1;
+        } else {
+          // Fall back to word boundary
+          const wordEnd = text.lastIndexOf(' ', chunkEnd);
+          if (wordEnd > currentPos + maxChunkSize * 0.5) {
+            chunkEnd = wordEnd;
+          }
+        }
+      }
+      
+      const chunk = text.slice(currentPos, chunkEnd).trim();
+      if (chunk.length > 0) {
+        chunks.push(chunk);
+      }
+      
+      currentPos = chunkEnd;
+    }
+    
+    return chunks;
+  }
+
+  private async concatenateAudioFiles(inputFiles: string[], outputPath: string): Promise<void> {
+    const { execSync } = require('child_process');
+    
+    // Create a file list for FFmpeg
+    const listFile = path.join(path.dirname(outputPath), `filelist-${Date.now()}.txt`);
+    const fileList = inputFiles.map(file => `file '${file}'`).join('\n');
+    
+    try {
+      fs.writeFileSync(listFile, fileList);
+      
+      // Use FFmpeg to concatenate the files
+      const command = `ffmpeg -f concat -safe 0 -i "${listFile}" -c copy "${outputPath}"`;
+      execSync(command, { encoding: 'utf8' });
+    } finally {
+      // Clean up the file list
+      try {
+        fs.unlinkSync(listFile);
+      } catch (error) {
+        logger.warn(`Failed to clean up file list: ${listFile}`, error);
+      }
+    }
   }
 
   // Voice configuration presets

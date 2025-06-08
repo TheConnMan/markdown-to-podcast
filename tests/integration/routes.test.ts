@@ -2,6 +2,48 @@
 process.env['METADATA_FILE'] = './test-data/episodes.json';
 process.env['AUDIO_OUTPUT_DIR'] = './test-data/audio';
 
+// Mock Google Cloud Text-to-Speech before importing server
+const mockTTSClient = {
+  synthesizeSpeech: jest.fn().mockResolvedValue([{
+    audioContent: Buffer.from('fake-audio-data')
+  }])
+};
+
+const mockLongAudioClient = {
+  synthesizeLongAudio: jest.fn().mockResolvedValue([{
+    name: 'fake-operation'
+  }])
+};
+
+jest.mock('@google-cloud/text-to-speech', () => ({
+  TextToSpeechClient: jest.fn(() => mockTTSClient),
+  TextToSpeechLongAudioSynthesizeClient: jest.fn(() => mockLongAudioClient)
+}));
+
+// Mock child_process for FFmpeg
+jest.mock('child_process', () => ({
+  execSync: jest.fn().mockReturnValue('60.0')
+}));
+
+// Mock fs module
+jest.mock('fs', () => ({
+  ...jest.requireActual('fs'),
+  writeFileSync: jest.fn(),
+  mkdirSync: jest.fn(),
+  rmSync: jest.fn(),
+  unlinkSync: jest.fn(),
+  existsSync: jest.fn((filePath: string) => {
+    // Return false for non-existent test files
+    if (filePath.includes('nonexistent.mp3')) {
+      return false;
+    }
+    return true;
+  }),
+  createReadStream: jest.fn(),
+  statSync: jest.fn(() => ({ size: 1000, ctime: new Date() })),
+  readdirSync: jest.fn(() => [])
+}));
+
 import request from 'supertest';
 import app from '../../src/server';
 
