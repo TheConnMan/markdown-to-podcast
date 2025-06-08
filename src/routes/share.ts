@@ -3,6 +3,11 @@ import { logger } from '../utils/logger';
 
 const router = Router();
 
+// Debug GET handler
+router.get('/', (_req, res) => {
+  res.json({ message: 'Share endpoint is working. Use POST to share content.' });
+});
+
 router.post('/', (req, res) => {
   try {
     const { url, text, title } = req.body as { url?: string; text?: string; title?: string };
