@@ -6,6 +6,8 @@ class PodcastGenerator {
         this.initializeElements();
         this.loadApiKey();
         this.setupEventListeners();
+        this.handleShareTarget();
+        this.setupOfflineDetection();
     }
 
     initializeElements() {
@@ -282,6 +284,78 @@ class PodcastGenerator {
         // This should match the PODCAST_UUID from the server
         // In a real app, this might be fetched from a config endpoint
         return 'abcd1234-5678-90ef-ghij-klmnop123456';
+    }
+
+    handleShareTarget() {
+        // Check if app was opened via share target
+        if (window.location.pathname === '/share' || window.location.search.includes('shared=true')) {
+            this.processSharedContent();
+        }
+    }
+
+    processSharedContent() {
+        const params = new URLSearchParams(window.location.search);
+        const title = params.get('title');
+        const text = params.get('text');
+        const url = params.get('url');
+        
+        console.log('Share target data:', { title, text, url });
+        
+        if (url) {
+            // URL was shared
+            this.inputTypeUrl.checked = true;
+            this.urlInput.value = url;
+            this.toggleInputType();
+            
+            // Show notification
+            this.showShareNotification(`URL shared: ${url}`);
+        } else if (text) {
+            // Text content was shared
+            this.inputTypeText.checked = true;
+            this.contentTextarea.value = text;
+            this.toggleInputType();
+            
+            // Show notification
+            this.showShareNotification('Content shared successfully');
+        }
+        
+        // Clean up URL
+        const cleanUrl = new URL(window.location);
+        cleanUrl.pathname = '/';
+        cleanUrl.search = '';
+        window.history.replaceState({}, '', cleanUrl);
+    }
+
+    showShareNotification(message) {
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 fade-in';
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    setupOfflineDetection() {
+        window.addEventListener('online', () => {
+            this.showNetworkStatus('Back online', 'green');
+        });
+        
+        window.addEventListener('offline', () => {
+            this.showNetworkStatus('Offline - some features unavailable', 'red');
+        });
+    }
+
+    showNetworkStatus(message, color) {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 left-4 bg-${color}-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 fade-in`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
     }
 }
 

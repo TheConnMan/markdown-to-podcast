@@ -6,6 +6,30 @@
     <title>Markdown to Podcast</title>
     <meta name="description" content="Convert markdown content to podcast episodes">
     
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#1e40af">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="MD2Podcast">
+    <meta name="msapplication-TileImage" content="/icons/icon-144x144.png">
+    <meta name="msapplication-TileColor" content="#1e40af">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/icons/icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180x180.png">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    
+    <!-- Splash screens for iOS -->
+    <link rel="apple-touch-startup-image" href="/icons/splash-640x1136.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)">
+    <link rel="apple-touch-startup-image" href="/icons/splash-750x1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)">
+    
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -251,5 +275,66 @@ More content..."
 
     <!-- JavaScript -->
     <script src="/app.js"></script>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then((registration) => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch((registrationError) => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+
+        // PWA install prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('PWA install prompt available');
+            e.preventDefault();
+            deferredPrompt = e;
+            showInstallPromotion();
+        });
+
+        function showInstallPromotion() {
+            // Show custom install button
+            const installDiv = document.createElement('div');
+            installDiv.innerHTML = `
+                <div class="fixed bottom-4 right-4 bg-podcast-blue text-white p-4 rounded-lg shadow-lg">
+                    <p class="text-sm mb-2">Install app for better experience!</p>
+                    <button id="install-btn" class="bg-white text-podcast-blue px-3 py-1 rounded text-sm">
+                        Install
+                    </button>
+                    <button id="dismiss-btn" class="ml-2 text-white underline text-sm">
+                        Dismiss
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(installDiv);
+
+            document.getElementById('install-btn').addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log(`User response to install prompt: ${outcome}`);
+                    deferredPrompt = null;
+                    document.body.removeChild(installDiv);
+                }
+            });
+
+            document.getElementById('dismiss-btn').addEventListener('click', () => {
+                document.body.removeChild(installDiv);
+            });
+        }
+
+        // Handle app install
+        window.addEventListener('appinstalled', (evt) => {
+            console.log('PWA was installed');
+        });
+    </script>
 </body>
 </html>

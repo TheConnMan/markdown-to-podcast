@@ -36,6 +36,13 @@ describe('API Routes Integration', () => {
   });
 
   test('POST /api/generate accepts URL', async () => {
+    // Mock fetch for URL processing
+    const mockMarkdown = '# Test Article\n\nThis is test content from URL.';
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      text: () => Promise.resolve(mockMarkdown),
+    }) as jest.Mock;
+
     const response = await request(app)
       .post('/api/generate')
       .set('X-API-Key', API_KEY)

@@ -12,7 +12,7 @@ module.exports = {
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',
-    '!src/server.ts',
+    '!src/server.ts', // Exclude server entry point
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html', 'json'],
@@ -27,13 +27,18 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   testTimeout: 30000,
   verbose: true,
+  
+  // Module name mapping for absolute imports
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     'extra-googletts': '<rootDir>/tests/__mocks__/extra-googletts.js',
   },
+  
   transformIgnorePatterns: [
     'node_modules/(?!(extra-googletts|music-metadata)/)',
   ],
+  
+  // Test environment variables
   testEnvironmentOptions: {
     NODE_ENV: 'test',
   },
