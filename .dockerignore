@@ -91,7 +91,7 @@ dist
 
 # Gatsby files
 .cache/
-public
+# public  # We need public directory for static assets
 
 # Storybook build outputs
 .out
