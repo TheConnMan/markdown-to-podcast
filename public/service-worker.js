@@ -5,8 +5,7 @@ const STATIC_CACHE_URLS = [
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
-  // Tailwind CSS will be cached from CDN
-  'https://cdn.tailwindcss.com',
+  // Note: Tailwind CSS from CDN cannot be cached due to CORS
 ];
 
 // Install event - cache static assets
