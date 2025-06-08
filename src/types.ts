@@ -68,3 +68,32 @@ export interface HealthStatus {
   version: string;
   environment: string;
 }
+
+// Episodes metadata file structure
+export interface EpisodesMetadata {
+  episodes: Episode[];
+  totalCount: number;
+  lastUpdated: Date;
+}
+
+// Audio generation configuration
+export interface AudioConfig {
+  voice: {
+    gender: 'MALE' | 'FEMALE' | 'NEUTRAL';
+    name: string;
+  };
+  audioEncoding: string;
+  pitch: number;
+  speakingRate: number;
+}
+
+// RSS feed configuration
+export interface RSSConfig {
+  title: string;
+  description: string;
+  feedUrl: string;
+  siteUrl: string;
+  author: string;
+  language: string;
+  email: string;
+}
