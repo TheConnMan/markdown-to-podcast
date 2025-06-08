@@ -54,13 +54,15 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-app.use(express.static(path.join(__dirname, '../public')));
-
+// API routes first, before static files
 app.use('/api', apiRoutes);
-app.use('/share', shareRoutes);
+app.use('/api/share', shareRoutes);
 app.use('/podcast', podcastRoutes);
 app.use('/audio', audioRoutes);
 app.use('/episode', episodeRoutes);
+
+// Static files last
+app.use(express.static(path.join(__dirname, '../public')));
 
 app.get('/health', (_req, res) => {
   const health: HealthStatus = {
