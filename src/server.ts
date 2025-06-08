@@ -19,7 +19,18 @@ import audioRoutes from './routes/audio';
 const app = express();
 
 app.use(requestLogger);
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: process.env['NODE_ENV'] === 'development' ? false : {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+    },
+  },
+}));
 app.use(compression());
 
 if (process.env['NODE_ENV'] === 'development') {
