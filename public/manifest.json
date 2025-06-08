@@ -6,80 +6,21 @@
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#1e40af",
-  "orientation": "portrait-primary",
   "scope": "/",
-  "lang": "en",
-  "dir": "ltr",
-  
+
   "icons": [
     {
-      "src": "/icons/icon-72x72.png",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-96x96.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-128x128.png",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-144x144.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-152x152.png",
-      "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-192x192.png",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%231e40af'/%3E%3Ccircle cx='96' cy='96' r='48' fill='white'/%3E%3C/svg%3E",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/svg+xml"
     },
     {
-      "src": "/icons/icon-384x384.png",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-512x512.png",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%231e40af'/%3E%3Ccircle cx='256' cy='256' r='128' fill='white'/%3E%3C/svg%3E",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/svg+xml"
     }
   ],
-  
-  "categories": ["productivity", "utilities", "education"],
-  "screenshots": [
-    {
-      "src": "/screenshots/desktop-1.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Main interface for generating podcasts"
-    },
-    {
-      "src": "/screenshots/mobile-1.png",
-      "sizes": "375x667",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Mobile interface for content input"
-    }
-  ],
-  
+
   "share_target": {
     "action": "/share",
     "method": "POST",
@@ -89,32 +30,5 @@
       "text": "text",
       "url": "url"
     }
-  },
-  
-  "shortcuts": [
-    {
-      "name": "Generate from URL",
-      "short_name": "URL",
-      "description": "Generate podcast from a URL",
-      "url": "/?mode=url",
-      "icons": [
-        {
-          "src": "/icons/shortcut-url.png",
-          "sizes": "96x96"
-        }
-      ]
-    },
-    {
-      "name": "Paste Markdown",
-      "short_name": "Paste",
-      "description": "Generate podcast from pasted content",
-      "url": "/?mode=paste",
-      "icons": [
-        {
-          "src": "/icons/shortcut-paste.png",
-          "sizes": "96x96"
-        }
-      ]
-    }
-  ]
+  }
 }

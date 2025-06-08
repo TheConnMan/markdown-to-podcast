@@ -4,7 +4,7 @@ import { logger } from '../utils/logger';
 
 const router = Router();
 
-router.post('/', authenticateKey, (req, res) => {
+router.post('/', (req, res) => {
   try {
     const { url, text, title } = req.body as { url?: string; text?: string; title?: string };
 
