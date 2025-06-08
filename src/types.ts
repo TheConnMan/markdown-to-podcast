@@ -85,8 +85,24 @@ export interface AudioConfig {
     name: string;
   };
   audioEncoding: string;
-  pitch: number;
-  speakingRate: number;
+  pitch: number; // -20.0 to 20.0
+  speakingRate: number; // 0.25 to 4.0
+  volumeGainDb?: number; // -96.0 to 16.0
+  effectsProfileIds?: string[];
+}
+
+export interface AudioGenerationProgress {
+  stage: 'preparing' | 'generating' | 'concatenating' | 'finalizing';
+  progress: number; // 0-100
+  message: string;
+  chunksTotal?: number;
+  chunksCompleted?: number;
+}
+
+export interface AudioGenerationError {
+  code: 'AUTH_ERROR' | 'QUOTA_ERROR' | 'NETWORK_ERROR' | 'FFMPEG_ERROR' | 'FILE_ERROR';
+  message: string;
+  retryable: boolean;
 }
 
 // RSS feed configuration
@@ -112,4 +128,30 @@ export interface ContentProcessingOptions {
   includeCodeBlocks?: boolean;
   includeImages?: boolean;
   cleanupLevel?: 'minimal' | 'standard' | 'aggressive';
+}
+
+// Storage-related types
+export interface StorageConfig {
+  metadataFile: string;
+  audioDir: string;
+  maxEpisodes: number;
+  backupEnabled: boolean;
+  compressionEnabled: boolean;
+}
+
+export interface StorageStats {
+  totalEpisodes: number;
+  totalDuration: number;
+  totalSize: number;
+  oldestEpisode: Date | null;
+  newestEpisode: Date | null;
+  averageEpisodeDuration: number;
+  averageFileSize: number;
+}
+
+export interface BackupInfo {
+  timestamp: Date;
+  episodeCount: number;
+  filePath: string;
+  size: number;
 }
