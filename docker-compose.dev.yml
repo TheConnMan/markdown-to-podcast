@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      # Source code for hot reload
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./tests:/app/tests
+      
+      # Persistent data
+      - ./data:/app/data
+      
+      # Environment variables
+      - ./.env:/app/.env
+      
+      # Node modules (avoid overwriting)
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+    env_file:
+      - .env
+    networks:
+      - podcast-network
+    restart: unless-stopped
+    
+    # Optional: Traefik labels for local development
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.podcast-dev.rule=Host(`podcast.localhost`)"
+      - "traefik.http.routers.podcast-dev.entrypoints=web"
+      - "traefik.http.services.podcast-dev.loadbalancer.server.port=3000"
+
+networks:
+  podcast-network:
+    driver: bridge
+
+volumes:
+  podcast-data:
+    driver: local

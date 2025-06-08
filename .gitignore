@@ -135,8 +135,3 @@ google-credentials.json
 # Test files
 test-data/
 coverage/
-
-# Docker
-.dockerignore
-Dockerfile*
-docker-compose*.yml

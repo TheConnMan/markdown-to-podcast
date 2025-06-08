@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      # Persistent data storage
+      - podcast-data:/app/data
+      
+      # Google Cloud credentials
+      - ${GOOGLE_CREDENTIALS_PATH}:/app/google-credentials.json:ro
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/google-credentials.json
+    env_file:
+      - .env.production
+    networks:
+      - podcast-network
+    restart: unless-stopped
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+    
+    # Traefik labels for production
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.podcast.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.podcast.entrypoints=websecure"
+      - "traefik.http.routers.podcast.tls.certresolver=letsencrypt"
+      - "traefik.http.services.podcast.loadbalancer.server.port=3000"
+      
+      # Security headers
+      - "traefik.http.middlewares.podcast-headers.headers.forceSTSHeader=true"
+      - "traefik.http.middlewares.podcast-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.podcast-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.podcast-headers.headers.browserXssFilter=true"
+      - "traefik.http.routers.podcast.middlewares=podcast-headers"
+
+  # Optional: Traefik reverse proxy
+  traefik:
+    image: traefik:v2.10
+    command:
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"  # Traefik dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-certs:/letsencrypt
+    networks:
+      - podcast-network
+    restart: unless-stopped
+
+networks:
+  podcast-network:
+    driver: bridge
+
+volumes:
+  podcast-data:
+    driver: local
+  traefik-certs:
+    driver: local
