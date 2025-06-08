@@ -48,11 +48,6 @@ export class RSSGenerator {
         { 'itunes:category': { _attr: { text: 'Technology' } } },
         { 'itunes:explicit': 'false' },
         { 'itunes:type': 'episodic' },
-        { 'atom:link': { _attr: { 
-          href: this.config.feedUrl, 
-          rel: 'self', 
-          type: 'application/rss+xml' 
-        }}},
       ],
     });
 
