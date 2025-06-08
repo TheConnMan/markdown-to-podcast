@@ -368,6 +368,10 @@ export class AudioGenerator {
         gender: 'FEMALE',
         name: 'en-US-Wavenet-E',
       },
+      'neutral-neural': {
+        gender: 'NEUTRAL',
+        name: 'en-US-Neural2-C',
+      },
       'male-neural': {
         gender: 'MALE',
         name: 'en-US-Neural2-A',

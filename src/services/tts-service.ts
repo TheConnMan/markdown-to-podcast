@@ -75,12 +75,13 @@ export class TTSService {
 
   estimateCost(
     textLength: number,
-    voiceType: 'standard' | 'wavenet' | 'neural' = 'wavenet'
+    voiceType: 'standard' | 'wavenet' | 'neural' | 'neural2' = 'wavenet'
   ): number {
     const pricing = {
       standard: 4 / 1000000, // $4 per 1M characters
       wavenet: 16 / 1000000, // $16 per 1M characters
       neural: 16 / 1000000, // $16 per 1M characters
+      neural2: 16 / 1000000, // $16 per 1M characters (same as wavenet)
     };
 
     return textLength * pricing[voiceType];
