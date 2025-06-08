@@ -2,7 +2,7 @@ import { Router } from 'express';
 
 const router = Router();
 
-router.get('/:uuid', async (req, res) => {
+router.get('/:uuid', (req, res) => {
   try {
     const { uuid } = req.params;
     const expectedUuid = process.env['PODCAST_UUID'];

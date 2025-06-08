@@ -5,12 +5,7 @@ export interface AppError extends Error {
   isOperational?: boolean;
 }
 
-export function errorHandler(
-  err: AppError,
-  _req: Request,
-  res: Response,
-  _next: NextFunction
-) {
+export function errorHandler(err: AppError, _req: Request, res: Response, _next: NextFunction) {
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Internal server error';
 

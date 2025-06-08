@@ -30,7 +30,7 @@ describe('Express Server', () => {
     const response = await request(app)
       .post('/api/generate')
       .set('X-API-Key', 'test-key')
-      .send({ content: 'test' });
+      .send({ content: '# Test Title\n\nThis is a test content that is long enough.' });
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
   });

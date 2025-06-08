@@ -1,7 +1,9 @@
 export interface ProcessedContent {
   title: string;
   text: string;
-  sourceType: 'markdown' | 'url' | 'artifact';
+  sourceType: 'markdown' | 'html' | 'artifact';
+  wordCount?: number;
+  estimatedDuration?: number; // in seconds
 }
 
 export interface AudioGenerationResult {
@@ -96,4 +98,18 @@ export interface RSSConfig {
   author: string;
   language: string;
   email: string;
+}
+
+// Content processing types
+export interface ContentProcessingError {
+  code: 'FETCH_ERROR' | 'PARSE_ERROR' | 'INVALID_URL' | 'CONTENT_TOO_LARGE';
+  message: string;
+  originalError?: Error;
+}
+
+export interface ContentProcessingOptions {
+  maxContentLength?: number;
+  includeCodeBlocks?: boolean;
+  includeImages?: boolean;
+  cleanupLevel?: 'minimal' | 'standard' | 'aggressive';
 }
