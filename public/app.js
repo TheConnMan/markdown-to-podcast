@@ -207,13 +207,27 @@ class PodcastGenerator {
     }
 
     async generatePodcast(data) {
+        // Debug API key characters
+        console.log('API Key:', this.apiKey);
+        console.log('API Key chars:', this.apiKey.split('').map((c, i) => `${i}: ${c} (${c.charCodeAt(0)})`));
+        
+        // Find non-ASCII characters in API key
+        const nonAsciiInKey = this.apiKey.split('').filter(c => c.charCodeAt(0) > 127);
+        console.log('Non-ASCII in API key:', nonAsciiInKey);
+        
+        // Use the API key that worked before (with cleaning)
+        const cleanApiKey = this.apiKey.replace(/[^\x00-\x7F]/g, "").trim();
+        console.log('Clean API Key:', cleanApiKey);
+        console.log('Original vs Clean length:', this.apiKey.length, 'vs', cleanApiKey.length);
+        
         const response = await fetch('/api/generate', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-API-Key': this.apiKey.trim(),
+                'X-API-Key': cleanApiKey,
             },
             body: JSON.stringify(data),
+            cache: 'no-cache'
         });
 
         if (!response.ok) {
