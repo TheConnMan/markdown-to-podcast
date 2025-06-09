@@ -29,6 +29,7 @@ class PodcastGenerator {
         this.apiKeySetup = document.getElementById('api-key-setup');
         this.apiKeyInput = document.getElementById('api-key-input');
         this.saveApiKeyBtn = document.getElementById('save-api-key');
+        this.clearApiKeyBtn = document.getElementById('clear-api-key');
         
         // Generation elements
         this.generateBtn = document.getElementById('generate-btn');
@@ -59,6 +60,7 @@ class PodcastGenerator {
         
         // API key management
         this.saveApiKeyBtn.addEventListener('click', () => this.saveApiKey());
+        this.clearApiKeyBtn.addEventListener('click', () => this.clearApiKey());
         this.apiKeyInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.saveApiKey();
         });
@@ -101,6 +103,13 @@ class PodcastGenerator {
 
     hideApiKeySetup() {
         this.apiKeySetup.classList.add('hidden');
+    }
+
+    clearApiKey() {
+        localStorage.removeItem('podcast_api_key');
+        this.apiKey = null;
+        this.apiKeyInput.value = '';
+        this.showApiKeySetup();
     }
 
     async loadConfig() {
