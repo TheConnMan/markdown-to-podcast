@@ -22,6 +22,9 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+# Copy Google Cloud credentials if they exist
+COPY google-credentials.json* ./
+
 # Build TypeScript
 RUN npm run build
 
