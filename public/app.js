@@ -211,7 +211,7 @@ class PodcastGenerator {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-API-Key': this.apiKey,
+                'X-API-Key': this.apiKey.trim(),
             },
             body: JSON.stringify(data),
         });
