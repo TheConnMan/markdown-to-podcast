@@ -74,15 +74,7 @@ self.addEventListener('fetch', (event) => {
         // Not in cache, fetch from network
         console.log('Fetching from network:', event.request.url);
         
-        // Add ngrok bypass header
-        const modifiedRequest = new Request(event.request, {
-            headers: new Headers({
-                ...event.request.headers,
-                'ngrok-skip-browser-warning': 'true'
-            })
-        });
-        
-        return fetch(modifiedRequest)
+        return fetch(event.request)
           .then((response) => {
             // Don't cache non-successful responses
             if (!response || response.status !== 200 || response.type !== 'basic') {
