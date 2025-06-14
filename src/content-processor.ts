@@ -1,6 +1,8 @@
 import MarkdownIt from 'markdown-it';
 import * as cheerio from 'cheerio';
 import { htmlToText } from 'html-to-text';
+import { Readability } from '@mozilla/readability';
+import { JSDOM } from 'jsdom';
 import { ProcessedContent } from './types';
 
 export class ContentProcessor {
@@ -46,7 +48,7 @@ export class ContentProcessor {
       // Detect content type and process accordingly
       if (this.isClaudeArtifact(url)) {
         return this.processClaudeArtifact(content);
-      } else if (this.isMarkdownContent(url, content)) {
+      } else if (this.isMarkdownContent(url)) {
         return this.processMarkdown(content);
       } else {
         return this.processHTML(content);
@@ -60,11 +62,10 @@ export class ContentProcessor {
     return url.includes('claude.ai/public/artifacts/');
   }
 
-  private isMarkdownContent(url: string, content: string): boolean {
-    return url.endsWith('.md') || 
-           content.includes('# ') || 
-           content.includes('## ') ||
-           content.includes('### ');
+  private isMarkdownContent(url: string): boolean {
+    // Only treat as markdown if URL explicitly ends in .md
+    // Don't rely on content detection as HTML pages may contain markdown-like headings
+    return url.endsWith('.md');
   }
 
   private processMarkdown(markdown: string): ProcessedContent {
@@ -112,6 +113,24 @@ export class ContentProcessor {
   }
 
   private processHTML(html: string): ProcessedContent {
+    try {
+      // Use Mozilla Readability for better article extraction
+      const dom = new JSDOM(html, { url: 'https://example.com' });
+      const reader = new Readability(dom.window.document);
+      const article = reader.parse();
+
+      if (article) {
+        return {
+          title: article.title || 'Web Article',
+          text: this.cleanTextForSpeech(article.textContent || ''),
+          sourceType: 'html',
+        };
+      }
+    } catch (error) {
+      console.warn('Readability parsing failed, falling back to Cheerio:', error);
+    }
+
+    // Fallback to original Cheerio implementation
     const $ = cheerio.load(html);
     
     // Remove unwanted elements
