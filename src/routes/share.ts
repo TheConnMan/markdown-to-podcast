@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { logger } from '../utils/logger';
+import { authenticateKey } from '../middleware/auth';
 
 const router = Router();
 
@@ -8,7 +9,7 @@ router.get('/', (_req, res) => {
   res.json({ message: 'Share endpoint is working. Use POST to share content.' });
 });
 
-router.post('/', (req, res) => {
+router.post('/', authenticateKey, (req, res) => {
   try {
     const { url, text, title } = req.body as { url?: string; text?: string; title?: string };
 

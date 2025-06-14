@@ -56,7 +56,7 @@ app.use(limiter);
 
 // API routes first, before static files
 app.use('/api', apiRoutes);
-app.use('/api/share', shareRoutes);
+app.use('/share', shareRoutes);
 app.use('/podcast', podcastRoutes);
 app.use('/audio', audioRoutes);
 app.use('/episode', episodeRoutes);
