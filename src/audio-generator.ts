@@ -380,6 +380,18 @@ export class AudioGenerator {
         gender: 'FEMALE',
         name: 'en-US-Neural2-C',
       },
+      'neutral-studio': {
+        gender: 'NEUTRAL',
+        name: 'en-US-Studio-O',
+      },
+      'male-studio': {
+        gender: 'MALE',
+        name: 'en-US-Studio-Q',
+      },
+      'female-studio': {
+        gender: 'FEMALE',
+        name: 'en-US-Studio-M',
+      },
     };
   }
 
