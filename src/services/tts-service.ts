@@ -1,6 +1,5 @@
 import { AudioGenerator, AudioGenerationResult } from '../audio-generator';
 import { ProcessedContent, AudioConfig } from '../types';
-import * as fs from 'fs';
 import { logger } from '../utils/logger';
 
 export class TTSService {
@@ -12,7 +11,7 @@ export class TTSService {
 
   async generateEpisodeAudio(
     content: ProcessedContent,
-    voicePreset: string = 'neutral-wavenet'
+    voicePreset: string = 'chris'
   ): Promise<AudioGenerationResult> {
     try {
       // Get voice configuration first
@@ -23,11 +22,14 @@ export class TTSService {
         throw new Error(`Unknown voice preset: ${voicePreset}`);
       }
 
-      // Validate Google Cloud credentials
-      this.validateGoogleCloudAuth();
+      // Validate ElevenLabs API key
+      this.validateElevenLabsAuth();
 
       const audioConfig: Partial<AudioConfig> = {
-        voice: voiceConfig,
+        voice: {
+          gender: voiceConfig.gender as 'MALE' | 'FEMALE' | 'NEUTRAL',
+          name: voicePreset,
+        },
         speakingRate: 1.0,
         pitch: 0,
       };
@@ -45,27 +47,30 @@ export class TTSService {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
       // Provide user-friendly error messages
-      if (errorMessage.includes('credentials')) {
-        throw new Error('Google Cloud TTS authentication failed. Please check your credentials.');
-      } else if (errorMessage.includes('quota')) {
-        throw new Error('Google Cloud TTS quota exceeded. Please try again later.');
+      if (errorMessage.includes('ELEVENLABS_API_KEY')) {
+        throw new Error('ElevenLabs TTS authentication failed. Please set the ELEVENLABS_API_KEY environment variable.');
+      } else if (errorMessage.includes('quota') || errorMessage.includes('limit')) {
+        throw new Error('ElevenLabs API quota exceeded. Please try again later or upgrade your plan.');
       } else if (errorMessage.includes('ffmpeg')) {
         throw new Error('Audio processing failed. FFmpeg may not be available.');
+      } else if (errorMessage.includes('401') || errorMessage.includes('unauthorized')) {
+        throw new Error('ElevenLabs API key is invalid. Please check your API key.');
       } else {
         throw new Error(`Audio generation failed: ${errorMessage}`);
       }
     }
   }
 
-  private validateGoogleCloudAuth(): void {
-    const credentials = process.env['GOOGLE_APPLICATION_CREDENTIALS'];
+  private validateElevenLabsAuth(): void {
+    const apiKey = process.env['ELEVENLABS_API_KEY'];
 
-    if (!credentials) {
-      throw new Error('GOOGLE_APPLICATION_CREDENTIALS environment variable not set');
+    if (!apiKey) {
+      throw new Error('ELEVENLABS_API_KEY environment variable not set');
     }
 
-    if (!fs.existsSync(credentials)) {
-      throw new Error(`Google Cloud credentials file not found: ${credentials}`);
+    // Basic format validation (ElevenLabs keys are typically alphanumeric)
+    if (apiKey.length < 20) {
+      throw new Error('ELEVENLABS_API_KEY appears to be invalid (too short)');
     }
   }
 
@@ -75,16 +80,16 @@ export class TTSService {
 
   estimateCost(
     textLength: number,
-    voiceType: 'standard' | 'wavenet' | 'neural' | 'neural2' | 'studio' = 'wavenet'
+    _voiceType: 'standard' | 'turbo' = 'turbo'
   ): number {
+    // ElevenLabs pricing (approximate, varies by plan):
+    // Turbo v2.5: ~$0.18 per 1000 characters (Starter plan)
+    // Standard models are more expensive
     const pricing = {
-      standard: 4 / 1000000, // $4 per 1M characters
-      wavenet: 16 / 1000000, // $16 per 1M characters
-      neural: 16 / 1000000, // $16 per 1M characters
-      neural2: 16 / 1000000, // $16 per 1M characters (same as wavenet)
-      studio: 160 / 1000000, // $160 per 1M characters (10x more expensive)
+      turbo: 0.18 / 1000, // $0.18 per 1K characters
+      standard: 0.30 / 1000, // $0.30 per 1K characters (multilingual v2)
     };
 
-    return textLength * pricing[voiceType];
+    return textLength * pricing.turbo; // Always use turbo pricing since we use turbo model
   }
 }

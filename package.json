@@ -1,7 +1,7 @@
 {
   "name": "markdown-to-podcast",
   "version": "0.1.0",
-  "description": "Convert markdown content to podcast episodes using Google Cloud TTS",
+  "description": "Convert markdown content to podcast episodes using ElevenLabs TTS",
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
@@ -20,7 +20,7 @@
     "podcast",
     "markdown",
     "text-to-speech",
-    "google-cloud-tts",
+    "elevenlabs",
     "typescript",
     "express"
   ],
@@ -30,7 +30,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@google-cloud/text-to-speech": "^6.1.0",
+    "elevenlabs": "^1.0.0",
     "@mozilla/readability": "^0.6.0",
     "@types/jsdom": "^21.1.7",
     "cheerio": "^1.0.0",

@@ -8,7 +8,7 @@ export interface AppConfig {
   nodeEnv: string;
   apiKey: string;
   podcastUuid: string;
-  googleCredentials: string;
+  elevenLabsApiKey: string;
   audioOutputDir: string;
   metadataFile: string;
   maxEpisodes: number;
@@ -53,7 +53,7 @@ export const appConfig: AppConfig = {
   nodeEnv: process.env['NODE_ENV'] || 'development',
   apiKey: process.env['API_KEY']!,
   podcastUuid: process.env['PODCAST_UUID']!,
-  googleCredentials: process.env['GOOGLE_APPLICATION_CREDENTIALS'] || '',
+  elevenLabsApiKey: process.env['ELEVENLABS_API_KEY'] || '',
   audioOutputDir: process.env['AUDIO_OUTPUT_DIR'] || './data/audio',
   metadataFile: process.env['METADATA_FILE'] || './data/episodes.json',
   maxEpisodes: parseInt(process.env['MAX_EPISODES'] || '25', 10),
