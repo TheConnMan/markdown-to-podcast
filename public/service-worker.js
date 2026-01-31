@@ -55,7 +55,9 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Handle PWA Share Target POST requests
+  // Legacy fallback: Handle PWA Share Target POST requests
+  // Primary share target now uses GET method (loads directly at /?text=...&url=...)
+  // This POST handler is kept for backwards compatibility
   if (event.request.method === 'POST' && url.pathname === '/share') {
     event.respondWith(handleShareTarget(event.request));
     return;

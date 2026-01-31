@@ -156,8 +156,8 @@ class PodcastGenerator {
         const params = new URLSearchParams(window.location.search);
         const url = params.get('url');
         const text = params.get('text');
+        const title = params.get('title');
         const mode = params.get('mode');
-        const shared = params.get('shared');
 
         // Handle mode from shortcuts
         if (mode === 'url') {
@@ -168,25 +168,23 @@ class PodcastGenerator {
             this.toggleInputType();
         }
 
-        // Handle shared content
+        // Handle shared/prefilled content (from share target or direct link)
         if (url) {
             this.inputTypeUrl.checked = true;
             this.urlInput.value = url;
             this.toggleInputType();
-            if (shared) {
-                this.showShareNotification('URL received - ready to generate!');
-            }
+            this.showShareNotification('URL received - ready to generate!');
         } else if (text) {
             this.inputTypeText.checked = true;
-            this.contentTextarea.value = text;
+            // If there's a title, prepend it as a heading
+            const content = title ? `# ${title}\n\n${text}` : text;
+            this.contentTextarea.value = content;
             this.toggleInputType();
-            if (shared) {
-                this.showShareNotification('Content received - ready to generate!');
-            }
+            this.showShareNotification('Content received - ready to generate!');
         }
 
         // Clean up URL after processing (remove query params)
-        if (shared || url || text || mode) {
+        if (url || text || mode) {
             const cleanUrl = new URL(window.location);
             cleanUrl.search = '';
             window.history.replaceState({}, '', cleanUrl);
@@ -387,11 +385,12 @@ class PodcastGenerator {
 
 
     handleShareTarget() {
-        // Share target handling is now unified in prefillFromQueryParams
-        // This method is kept for any future share-specific logic
+        // Share target handling is unified in prefillFromQueryParams
+        // GET method share targets load directly at /?text=...&url=...
+        // This method is kept for logging/debugging
         const params = new URLSearchParams(window.location.search);
-        if (params.get('shared') === 'true') {
-            console.log('App opened via share target');
+        if (params.get('text') || params.get('url')) {
+            console.log('App opened with shared content');
         }
     }
 
