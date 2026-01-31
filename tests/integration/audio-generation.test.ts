@@ -10,10 +10,10 @@ describe('Audio Generation Integration', () => {
     ttsService = new TTSService();
   });
 
-  test('validates Google Cloud authentication', async () => {
-    // Temporarily remove credentials
-    const originalCreds = process.env['GOOGLE_APPLICATION_CREDENTIALS'];
-    delete process.env['GOOGLE_APPLICATION_CREDENTIALS'];
+  test('validates ElevenLabs authentication', async () => {
+    // Temporarily remove API key
+    const originalKey = process.env['ELEVENLABS_API_KEY'];
+    delete process.env['ELEVENLABS_API_KEY'];
 
     const testContent: ProcessedContent = {
       title: 'Test',
@@ -21,29 +21,33 @@ describe('Audio Generation Integration', () => {
       sourceType: 'markdown',
     };
 
-    await expect(ttsService.generateEpisodeAudio(testContent)).rejects.toThrow('GOOGLE_APPLICATION_CREDENTIALS environment variable not set');
+    await expect(ttsService.generateEpisodeAudio(testContent)).rejects.toThrow('ELEVENLABS_API_KEY');
 
-    // Restore credentials
-    if (originalCreds) {
-      process.env['GOOGLE_APPLICATION_CREDENTIALS'] = originalCreds;
+    // Restore API key
+    if (originalKey) {
+      process.env['ELEVENLABS_API_KEY'] = originalKey;
     }
   });
 
   test('estimates costs correctly', () => {
-    const cost = ttsService.estimateCost(1000, 'wavenet');
-    expect(cost).toBe(0.016); // 1000 chars * $16/1M chars
+    const cost = ttsService.estimateCost(1000, 'turbo');
+    expect(cost).toBeCloseTo(0.18, 2); // 1000 chars * $0.18/1K chars
   });
 
   test('gets available voices', () => {
     const voices = ttsService.getAvailableVoices();
+    expect(voices).toContain('chris');
+    expect(voices).toContain('adam');
+    expect(voices).toContain('rachel');
+    // Legacy presets should still work
     expect(voices).toContain('neutral-wavenet');
     expect(voices).toContain('male-neural');
   });
 
   test('handles invalid voice preset', async () => {
-    // Set up valid credentials for this test to avoid auth error
-    process.env['GOOGLE_APPLICATION_CREDENTIALS'] = './fake-credentials.json';
-    
+    // Set up valid API key for this test to avoid auth error
+    process.env['ELEVENLABS_API_KEY'] = 'test-elevenlabs-api-key-12345678901234567890';
+
     const testContent: ProcessedContent = {
       title: 'Test',
       text: 'Test content',

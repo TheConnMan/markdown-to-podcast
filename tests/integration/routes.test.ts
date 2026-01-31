@@ -1,23 +1,19 @@
 // Set environment variables before importing the app
 process.env['METADATA_FILE'] = './test-data/episodes.json';
 process.env['AUDIO_OUTPUT_DIR'] = './test-data/audio';
+process.env['ELEVENLABS_API_KEY'] = 'test-elevenlabs-api-key-12345678901234567890';
 
-// Mock Google Cloud Text-to-Speech before importing server
-const mockTTSClient = {
-  synthesizeSpeech: jest.fn().mockResolvedValue([{
-    audioContent: Buffer.from('fake-audio-data')
-  }])
-};
-
-const mockLongAudioClient = {
-  synthesizeLongAudio: jest.fn().mockResolvedValue([{
-    name: 'fake-operation'
-  }])
-};
-
-jest.mock('@google-cloud/text-to-speech', () => ({
-  TextToSpeechClient: jest.fn(() => mockTTSClient),
-  TextToSpeechLongAudioSynthesizeClient: jest.fn(() => mockLongAudioClient)
+// Mock ElevenLabs SDK
+jest.mock('elevenlabs', () => ({
+  ElevenLabsClient: jest.fn().mockImplementation(() => ({
+    textToSpeech: {
+      convert: jest.fn().mockImplementation(async () => ({
+        [Symbol.asyncIterator]: async function* () {
+          yield Buffer.from('fake-audio-data');
+        }
+      }))
+    }
+  }))
 }));
 
 // Mock child_process for FFmpeg
@@ -60,7 +56,7 @@ describe('API Routes Integration', () => {
       .post('/api/generate')
       .set('X-API-Key', API_KEY)
       .send({});
-    
+
     expect(response.status).toBe(400);
     expect(response.body.message).toContain('content or url must be provided');
   });
@@ -70,7 +66,7 @@ describe('API Routes Integration', () => {
       .post('/api/generate')
       .set('X-API-Key', API_KEY)
       .send({ content: 'Test markdown content' });
-    
+
     // The mock should make this succeed
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
@@ -89,7 +85,7 @@ describe('API Routes Integration', () => {
       .post('/api/generate')
       .set('X-API-Key', API_KEY)
       .send({ url: 'https://example.com' });
-    
+
     // The mock should make this succeed
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);

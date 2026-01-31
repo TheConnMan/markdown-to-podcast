@@ -2,7 +2,7 @@
 
 ## Overview
 
-A lightweight TypeScript web application that converts markdown content into transient podcast episodes by generating audio using OpenAI's text-to-speech API and serving them via a personal RSS feed for immediate consumption.
+A lightweight TypeScript web application that converts markdown content into transient podcast episodes by generating audio using ElevenLabs text-to-speech API and serving them via a personal RSS feed for immediate consumption.
 
 ## MVP Core Features
 
@@ -13,12 +13,12 @@ A lightweight TypeScript web application that converts markdown content into tra
 - **Content Processing**: Parse markdown, extract text from HTML artifacts, extract first heading as title
 
 ### 2. Audio Generation
-- **Google Cloud TTS Integration**: Convert markdown text to MP3 using Google Cloud Text-to-Speech API
-- **Automatic Chunking**: `extra-googletts` handles long content chunking automatically (5000+ chars per request)
-- **Built-in Concatenation**: Library handles FFmpeg concatenation without gaps/clicks
+- **ElevenLabs TTS Integration**: Convert markdown text to MP3 using ElevenLabs Text-to-Speech API
+- **Automatic Chunking**: Handle long content by splitting into chunks (up to 4500 chars per request)
+- **Built-in Concatenation**: FFmpeg handles audio concatenation without gaps/clicks
 - **Duration Calculation**: Automatic audio duration extraction
-- **Voice Customization**: Configurable voice gender, pitch, rate, and emphasis
-- **Retry Logic**: Built-in retry mechanism for failed API calls
+- **Voice Customization**: Multiple pre-configured voice options (Chris, Adam, Rachel, etc.)
+- **Turbo Model**: Uses `eleven_turbo_v2_5` for cost-efficient generation
 - **Single Audio File**: Outputs one continuous episode file ready for podcast consumption
 
 ### 3. Content Management
@@ -65,7 +65,7 @@ A lightweight TypeScript web application that converts markdown content into tra
 - **Metadata**: JSON file storage
 
 ### Core Dependencies
-- **Google Cloud TTS**: `extra-googletts` npm package (handles chunking, TTS, FFmpeg)
+- **ElevenLabs TTS**: `elevenlabs` npm package for text-to-speech
 - **Markdown Parser**: `markdown-it` for parsing and text extraction
 - **RSS Generator**: `rss` npm package for valid podcast feeds with validation
 - **PWA Minimal**: Basic service worker + manifest for share target only
@@ -86,14 +86,14 @@ A lightweight TypeScript web application that converts markdown content into tra
 ### Regular Use
 1. **Share from any app**: User finds markdown URL in browser/app → Share → "Markdown to Podcast"
 2. **Automatic processing**: App uses stored API key, extracts title from first heading
-3. **Audio generation**: App chunks content, calls Google Cloud TTS, concatenates audio
+3. **Audio generation**: App chunks content, calls ElevenLabs TTS, concatenates audio
 4. **Episode creation**: Audio saved locally, RSS feed updated
 5. **Notification**: User sees success message with RSS feed URL
 6. **Podcast consumption**: Podcast app downloads new episode automatically
 
 ## Implementation Priority
 
-**Phase 1 (MVP)**: Core markdown processing, Google Cloud TTS with chunking, filesystem storage, basic RSS generation
+**Phase 1 (MVP)**: Core markdown processing, ElevenLabs TTS with chunking, filesystem storage, basic RSS generation
 **Phase 2**: PWA with share target, enhanced error handling, volume mounting options
 **Phase 3**: User accounts, multiple feeds, advanced features
 
@@ -102,7 +102,7 @@ A lightweight TypeScript web application that converts markdown content into tra
 ### Audio Processing Strategy
 ```typescript
 import MarkdownIt from 'markdown-it';
-const googletts = require('extra-googletts');
+import { ElevenLabsClient } from 'elevenlabs';
 
 const md = new MarkdownIt();
 const tokens = md.parse(markdownContent, {});
@@ -113,14 +113,15 @@ const firstHeading = extractFirstHeading(tokens);
 // Process tokens into readable sections - strip code blocks, format lists
 const readableText = processMarkdownForSpeech(tokens);
 
-// Generate audio using extra-googletts (handles chunking automatically)
-await googletts('episode.mp3', readableText, {
-  voice: {
-    gender: 'NEUTRAL',
-    name: 'en-US-Wavenet-C'
-  },
-  log: true,
-  retries: 3
+// Generate audio using ElevenLabs
+const client = new ElevenLabsClient({ apiKey: process.env.ELEVENLABS_API_KEY });
+const audioStream = await client.textToSpeech.convert('iP95p4xoKVk53GoZ742B', {
+  text: readableText,
+  model_id: 'eleven_turbo_v2_5',
+  voice_settings: {
+    stability: 0.5,
+    similarity_boost: 0.75,
+  }
 });
 ```
 
@@ -129,7 +130,7 @@ await googletts('episode.mp3', readableText, {
 {
   "dependencies": {
     "express": "^4.18.0",
-    "extra-googletts": "^1.0.0",
+    "elevenlabs": "^1.0.0",
     "markdown-it": "^14.0.0",
     "rss": "^1.2.2",
     "uuid": "^9.0.0",
@@ -221,22 +222,22 @@ CMD ["npm", "start"]
 
 ## Cost Analysis
 
-### Google Cloud TTS Pricing
-- **Standard Voices**: $4 per 1M characters (4M characters/month free)
-- **WaveNet Voices**: $16 per 1M characters (1M characters/month free)
-- **Neural2 Voices**: $16 per 1M characters (1M characters/month free)
+### ElevenLabs Pricing
+- **Turbo v2.5**: ~$0.18 per 1K characters (varies by plan)
+- **Starter Plan**: 30,000 characters/month included
+- **Creator Plan**: 100,000 characters/month
 
 ### Usage Estimate (20 articles/month, ~7K characters each)
-- **Total monthly usage**: ~135K characters
-- **Cost with any voice type**: **$0/month** (well within free tiers)
-- **Annual cost**: **$0** for projected usage patterns
+- **Total monthly usage**: ~140K characters
+- **Cost with Starter Plan**: ~$20/month after free tier
+- **Cost with Creator Plan**: ~$5/month after included characters
 
 ## Testing Strategy
 
 ### Unit Tests
 - **Markdown Processing**: Test markdown parsing, title extraction, content cleaning
 - **Claude Artifact Processing**: Test HTML content extraction from artifact URLs
-- **Audio Generation**: Mock Google Cloud TTS calls, test chunking logic
+- **Audio Generation**: Mock ElevenLabs API calls, test chunking logic
 - **RSS Feed Generation**: Test valid RSS 2.0 output, episode metadata
 - **File Management**: Test episode cleanup, JSON metadata operations
 - **URL Processing**: Test different content types (markdown, HTML, Claude artifacts)
@@ -248,8 +249,8 @@ CMD ["npm", "start"]
 
 ### GitHub Actions
 - **Test Runner**: Automated testing on push/PR using Jest
-- **Container Publishing**: Build and push to Google Container Registry
-- **Security**: Use GitHub secrets for Google Cloud credentials
+- **Container Publishing**: Build and push to container registry
+- **Security**: Use GitHub secrets for ElevenLabs API key
 
 ## Local Development & Testing
 
@@ -258,8 +259,7 @@ CMD ["npm", "start"]
 **Solution**: Develop inside Docker container with volume mounting for hot reload
 
 ### Prerequisites Setup
-- Google Cloud project with Text-to-Speech API enabled
-- Service account with TTS permissions + JSON key file
+- ElevenLabs account with API key
 - LocalTunnel (LT) for HTTPS testing: `npm install -g localtunnel`
 - Docker + Docker Compose
 
@@ -294,6 +294,7 @@ services:
       - NODE_ENV=development
       - API_KEY=${API_KEY}
       - PODCAST_UUID=${PODCAST_UUID}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
 ```
 
 ```dockerfile
@@ -336,28 +337,21 @@ CMD ["npm", "run", "dev"]  # ts-node-dev for hot reload
 
 ## Setup Instructions
 
-### Google Cloud Authentication
-1. **Create Project**: https://console.cloud.google.com/
-2. **Enable API**: Search "Text-to-Speech API" → Enable
-3. **Service Account**:
-   - IAM & Admin → Service Accounts → Create
-   - Role: "Cloud Text-to-Speech User"
-   - Create JSON key → Download
-4. **Local Setup**: `export GOOGLE_APPLICATION_CREDENTIALS="path/to/key.json"`
+### ElevenLabs Authentication
+1. **Create Account**: https://elevenlabs.io
+2. **Get API Key**: Settings → API Keys → Generate
+3. **Local Setup**: Add to `.env` file as `ELEVENLABS_API_KEY`
 
 ### GitHub Actions Credentials
-1. **Container Registry**: Enable Google Container Registry API
-2. **Service Account**: Add "Storage Admin" role for GCR push
-3. **GitHub Secrets**:
-   - `GCP_CREDENTIALS`: Base64 encoded service account JSON
-   - `GCP_PROJECT_ID`: Your Google Cloud project ID
+1. **GitHub Secrets**:
+   - `ELEVENLABS_API_KEY`: Your ElevenLabs API key
    - `API_KEY`: Your application's authentication secret
    - `PODCAST_UUID`: Generated UUID for RSS feed obfuscation
 
 ### Local Environment
 ```bash
 # Required environment variables (.env file)
-GOOGLE_APPLICATION_CREDENTIALS="/app/google-credentials.json"
+ELEVENLABS_API_KEY="your-elevenlabs-api-key"
 API_KEY="your-secret-key"
 PODCAST_UUID="abcd1234-5678-90ef-ghij-klmnop123456"
 PORT=3000
@@ -404,7 +398,7 @@ function extractTextFromClaudeArtifact(html: string): string {
 
 ### Production (Traefik + Docker)
 - **Reverse Proxy**: Traefik handles HTTPS + Let's Encrypt
-- **Container**: Published to Google Container Registry
+- **Container**: Docker container with ElevenLabs integration
 - **Configuration**: Docker Compose with Traefik labels
 
 ### Local Testing Alternative

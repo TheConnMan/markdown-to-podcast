@@ -14,7 +14,7 @@ process.env['BASE_URL'] = 'http://localhost:3001';
 process.env['AUDIO_OUTPUT_DIR'] = './test-data/audio';
 process.env['METADATA_FILE'] = './test-data/episodes.json';
 process.env['MAX_EPISODES'] = '5';
-process.env['GOOGLE_APPLICATION_CREDENTIALS'] = './tests/fixtures/fake-credentials.json';
+process.env['ELEVENLABS_API_KEY'] = 'test-elevenlabs-api-key-12345678901234567890';
 
 // Test podcast configuration
 process.env['PODCAST_TITLE'] = 'Test Podcast';
@@ -40,24 +40,21 @@ global.console = {
   error: jest.fn(),
 };
 
-// Mock external dependencies
-jest.mock('extra-googletts', () => {
-  return jest.fn().mockImplementation((filePath, _text, _options) => {
-    const fs = require('fs');
-    const path = require('path');
-    
-    // Create mock audio file
-    const mockAudioData = Buffer.from('mock audio data');
-    const dir = path.dirname(filePath);
-    
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+// Mock ElevenLabs SDK
+jest.mock('elevenlabs', () => ({
+  ElevenLabsClient: jest.fn().mockImplementation(() => ({
+    textToSpeech: {
+      convert: jest.fn().mockImplementation(async () => {
+        // Return an async iterable that yields mock audio data
+        return {
+          [Symbol.asyncIterator]: async function* () {
+            yield Buffer.from('mock audio data');
+          }
+        };
+      })
     }
-    
-    fs.writeFileSync(filePath, mockAudioData);
-    return Promise.resolve();
-  });
-});
+  }))
+}));
 
 // Mock fetch for URL processing tests
 global.fetch = jest.fn();
@@ -83,13 +80,13 @@ expect.extend({
     const pass = received.includes('<?xml version="1.0"') &&
                  received.includes('<rss version="2.0"') &&
                  received.includes('<channel>');
-    
+
     return {
       message: () => `expected ${received} to be a valid RSS feed`,
       pass,
     };
   },
-  
+
   toBeValidJSON(received: string) {
     try {
       JSON.parse(received);

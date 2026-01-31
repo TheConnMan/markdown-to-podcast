@@ -1,23 +1,19 @@
 // Set environment variables before importing the app
 process.env['METADATA_FILE'] = './test-data/episodes.json';
 process.env['AUDIO_OUTPUT_DIR'] = './test-data/audio';
+process.env['ELEVENLABS_API_KEY'] = 'test-elevenlabs-api-key-12345678901234567890';
 
-// Mock Google Cloud Text-to-Speech before importing server
-const mockTTSClient = {
-  synthesizeSpeech: jest.fn().mockResolvedValue([{
-    audioContent: Buffer.from('fake-audio-data')
-  }])
-};
-
-const mockLongAudioClient = {
-  synthesizeLongAudio: jest.fn().mockResolvedValue([{
-    name: 'fake-operation'
-  }])
-};
-
-jest.mock('@google-cloud/text-to-speech', () => ({
-  TextToSpeechClient: jest.fn(() => mockTTSClient),
-  TextToSpeechLongAudioSynthesizeClient: jest.fn(() => mockLongAudioClient)
+// Mock ElevenLabs SDK
+jest.mock('elevenlabs', () => ({
+  ElevenLabsClient: jest.fn().mockImplementation(() => ({
+    textToSpeech: {
+      convert: jest.fn().mockImplementation(async () => ({
+        [Symbol.asyncIterator]: async function* () {
+          yield Buffer.from('fake-audio-data');
+        }
+      }))
+    }
+  }))
 }));
 
 // Mock child_process for FFmpeg
@@ -66,12 +62,12 @@ describe('Express Server', () => {
 
   test('API key authentication success', async () => {
     process.env['API_KEY'] = 'test-key';
-    
+
     const response = await request(app)
       .post('/api/generate')
       .set('X-API-Key', 'test-key')
       .send({ content: '# Test Title\n\nThis is a test content that is long enough.' });
-    
+
     // The mock should make this succeed
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);

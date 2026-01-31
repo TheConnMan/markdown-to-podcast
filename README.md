@@ -1,11 +1,11 @@
 # Markdown to Podcast
 
-A TypeScript web application that converts markdown content into podcast episodes using Google Cloud Text-to-Speech API and serves them via RSS feed.
+A TypeScript web application that converts markdown content into podcast episodes using ElevenLabs Text-to-Speech and serves them via RSS feed.
 
 ## Features
 
 - **Content Input**: Paste markdown content or import from URLs
-- **Audio Generation**: Convert text to MP3 using Google Cloud TTS
+- **Audio Generation**: Convert text to MP3 using ElevenLabs TTS
 - **RSS Feed**: Generate podcast feed for consumption in podcast apps
 - **PWA Support**: Progressive Web App with share target functionality
 - **Storage Management**: Automatic episode cleanup (25 episode limit)
@@ -16,18 +16,17 @@ A TypeScript web application that converts markdown content into podcast episode
 ### Prerequisites
 
 - Docker and Docker Compose
-- Google Cloud project with Text-to-Speech API enabled
-- Service account with TTS permissions
+- ElevenLabs API key (get one at https://elevenlabs.io)
 
 ### Setup
 
 1. Clone the repository
-2. Create Google Cloud service account and download JSON key
+2. Get your ElevenLabs API key from https://elevenlabs.io/app/settings/api-keys
 3. Set up environment variables:
 
 ```bash
 # .env
-GOOGLE_APPLICATION_CREDENTIALS="/app/google-credentials.json"
+ELEVENLABS_API_KEY="your-elevenlabs-api-key"
 API_KEY="your-secret-key"
 PODCAST_UUID="your-uuid-for-rss-feed"
 PORT=3000
@@ -83,7 +82,7 @@ npm run test:coverage
 ### Architecture
 
 - **Backend**: Express.js with TypeScript
-- **Audio Processing**: Google Cloud TTS + FFmpeg
+- **Audio Processing**: ElevenLabs TTS + FFmpeg
 - **Frontend**: Static HTML with vanilla JavaScript
 - **Storage**: JSON metadata + filesystem audio storage
 - **RSS**: Standards-compliant podcast feed
@@ -94,19 +93,18 @@ npm run test:coverage
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `GOOGLE_APPLICATION_CREDENTIALS` | Path to Google Cloud service account JSON | Yes |
+| `ELEVENLABS_API_KEY` | ElevenLabs API key | Yes |
 | `API_KEY` | Authentication key for API access | Yes |
 | `PODCAST_UUID` | UUID for RSS feed URL obfuscation | Yes |
 | `PORT` | Server port (default: 3000) | No |
 | `NODE_ENV` | Environment (development/production) | No |
 
-### Google Cloud Setup
+### ElevenLabs Setup
 
-1. Create Google Cloud project
-2. Enable Text-to-Speech API
-3. Create service account with "Cloud Text-to-Speech User" role
-4. Download JSON key file
-5. Mount key file in Docker container
+1. Create an account at https://elevenlabs.io
+2. Go to Settings > API Keys
+3. Generate an API key
+4. Add to your `.env` file as `ELEVENLABS_API_KEY`
 
 ## Docker
 

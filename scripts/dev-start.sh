@@ -14,11 +14,12 @@ if [ ! -f .env ]; then
   exit 1
 fi
 
-# Check if Google Cloud credentials exist
-GOOGLE_CREDS=$(grep GOOGLE_APPLICATION_CREDENTIALS .env | cut -d'=' -f2)
-if [ ! -f "$GOOGLE_CREDS" ]; then
-  echo "⚠️  Google Cloud credentials file not found: $GOOGLE_CREDS"
-  echo "Please download your service account key and update .env"
+# Check if ElevenLabs API key is set
+ELEVENLABS_KEY=$(grep ELEVENLABS_API_KEY .env | cut -d'=' -f2)
+if [ -z "$ELEVENLABS_KEY" ] || [ "$ELEVENLABS_KEY" = "your-elevenlabs-api-key-here" ]; then
+  echo "⚠️  ElevenLabs API key not configured"
+  echo "Please get your API key from https://elevenlabs.io/app/settings/api-keys"
+  echo "and update ELEVENLABS_API_KEY in .env"
   exit 1
 fi
 

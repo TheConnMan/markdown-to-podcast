@@ -1,22 +1,19 @@
 import { ProcessedContent } from '../../src/types';
 import * as fs from 'fs';
 
-// Mock Google Cloud Text-to-Speech
-const mockTTSClient = {
-  synthesizeSpeech: jest.fn().mockResolvedValue([{
-    audioContent: Buffer.from('fake-audio-data')
-  }])
-};
+// Mock ElevenLabs SDK
+const mockConvert = jest.fn().mockImplementation(async () => ({
+  [Symbol.asyncIterator]: async function* () {
+    yield Buffer.from('fake-audio-data');
+  }
+}));
 
-const mockLongAudioClient = {
-  synthesizeLongAudio: jest.fn().mockResolvedValue([{
-    name: 'fake-operation'
-  }])
-};
-
-jest.mock('@google-cloud/text-to-speech', () => ({
-  TextToSpeechClient: jest.fn(() => mockTTSClient),
-  TextToSpeechLongAudioSynthesizeClient: jest.fn(() => mockLongAudioClient)
+jest.mock('elevenlabs', () => ({
+  ElevenLabsClient: jest.fn().mockImplementation(() => ({
+    textToSpeech: {
+      convert: mockConvert
+    }
+  }))
 }));
 
 // Mock child_process for FFmpeg
@@ -41,32 +38,33 @@ import { AudioGenerator } from '../../src/audio-generator';
 
 describe('AudioGenerator', () => {
   let generator: AudioGenerator;
-  
+
   const shortContent: ProcessedContent = {
     title: 'Short Episode',
     text: 'This is a short test episode with some content to convert to speech.',
     sourceType: 'markdown',
   };
-  
+
   const longContent: ProcessedContent = {
     title: 'Long Episode',
-    text: 'A'.repeat(5000) + ' This is a very long episode that exceeds the regular TTS character limit and should trigger chunked processing or long audio synthesis.',
+    text: 'A'.repeat(5000) + ' This is a very long episode that exceeds the regular TTS character limit and should trigger chunked processing.',
     sourceType: 'markdown',
   };
-  
+
   const veryLongContent: ProcessedContent = {
     title: 'Very Long Episode',
-    text: 'A'.repeat(950000) + ' This is an extremely long episode that exceeds even the long audio synthesis limit.',
+    text: 'A'.repeat(10000) + ' This is an extremely long episode that requires multiple chunks.',
     sourceType: 'markdown',
   };
 
   beforeEach(() => {
-    // Mock the output directory to a test location
+    // Set up test environment
     process.env['AUDIO_OUTPUT_DIR'] = './test-audio';
-    
+    process.env['ELEVENLABS_API_KEY'] = 'test-elevenlabs-api-key-12345678901234567890';
+
     // Reset all mocks before each test
     jest.clearAllMocks();
-    
+
     generator = new AudioGenerator();
     // Ensure test directory exists
     if (!fs.existsSync('./test-audio')) {
@@ -92,31 +90,31 @@ describe('AudioGenerator', () => {
 
   test('generates audio file successfully for short content', async () => {
     const result = await generator.generateAudio(shortContent);
-    
+
     expect(result.episodeId).toBeDefined();
     expect(result.fileName).toMatch(/^episode-.+\.mp3$/);
     expect(result.title).toBe('Short Episode');
     expect(result.fileSize).toBeGreaterThan(0);
-    expect(mockTTSClient.synthesizeSpeech).toHaveBeenCalledTimes(1);
+    expect(mockConvert).toHaveBeenCalledTimes(1);
   });
 
   test('uses chunked synthesis for long content', async () => {
     const result = await generator.generateAudio(longContent);
-    
+
     expect(result.episodeId).toBeDefined();
     expect(result.title).toBe('Long Episode');
     // Should create multiple TTS calls for chunks
-    expect(mockTTSClient.synthesizeSpeech).toHaveBeenCalled();
+    expect(mockConvert).toHaveBeenCalled();
   });
-  
+
   test('cleans up on generation failure', async () => {
-    // Mock TTS client to throw error
-    mockTTSClient.synthesizeSpeech.mockRejectedValueOnce(new Error('TTS error'));
-    
+    // Mock ElevenLabs to throw error
+    mockConvert.mockRejectedValueOnce(new Error('TTS error'));
+
     // Mock fs.existsSync to return false so unlinkSync isn't called
     const fs = require('fs');
     fs.existsSync.mockReturnValueOnce(false);
-    
+
     await expect(generator.generateAudio(shortContent)).rejects.toThrow('Audio generation failed');
   });
 
@@ -124,7 +122,7 @@ describe('AudioGenerator', () => {
     const generator = new AudioGenerator();
     // Access public method for testing
     const preparedText = generator.prepareTextForTTS('Dr. Smith said API is great.\n\nNext paragraph.');
-    
+
     expect(preparedText).toContain('Doctor Smith');
     expect(preparedText).toContain('A P I');
     expect(preparedText).not.toContain('\n\n');
@@ -132,38 +130,43 @@ describe('AudioGenerator', () => {
 
   test('splits text into appropriate chunks', () => {
     const testText = 'A'.repeat(3000) + '. ' + 'B'.repeat(3000) + '. ' + 'C'.repeat(2000) + '.';
-    
+
     // Access the private method through any casting for testing
     const chunks = (generator as any).splitTextIntoChunks(testText, 4500);
-    
+
     expect(chunks.length).toBeGreaterThan(1);
     chunks.forEach((chunk: string) => {
       expect(chunk.length).toBeLessThanOrEqual(4500);
     });
   });
-  
+
   test('gets voice presets', () => {
     const presets = AudioGenerator.getVoicePresets();
+    expect(presets).toHaveProperty('chris');
+    expect(presets).toHaveProperty('adam');
+    expect(presets).toHaveProperty('rachel');
+    expect(presets['chris']).toHaveProperty('voiceId');
+    expect(presets['chris']).toHaveProperty('gender', 'MALE');
+    // Legacy presets should map to ElevenLabs voices
     expect(presets).toHaveProperty('neutral-wavenet');
-    expect(presets).toHaveProperty('male-neural');
-    expect(presets['neutral-wavenet']).toHaveProperty('gender', 'NEUTRAL');
+    expect(presets['neutral-wavenet'].voiceId).toBe(presets['chris'].voiceId);
   });
 
   test('handles very long content gracefully', async () => {
     const result = await generator.generateAudio(veryLongContent);
-    
+
     expect(result.episodeId).toBeDefined();
     expect(result.title).toBe('Very Long Episode');
     // Should use chunked processing for very long content
-    expect(mockTTSClient.synthesizeSpeech).toHaveBeenCalled();
+    expect(mockConvert).toHaveBeenCalled();
   });
-  
-  test('estimates cost correctly', () => {
-    // Test cost estimation logic
-    const cost = 1000 * (16 / 1000000); // 1000 chars at $16 per 1M
-    expect(cost).toBeCloseTo(0.016);
+
+  test('estimates cost correctly for ElevenLabs turbo', () => {
+    // ElevenLabs turbo pricing: ~$0.18 per 1K characters
+    const cost = 1000 * (0.18 / 1000);
+    expect(cost).toBeCloseTo(0.18);
   });
-  
+
   test('cleans up old files', async () => {
     // Create some test files
     const testFiles = ['episode-old1.mp3', 'episode-old2.mp3', 'episode-old3.mp3'];
@@ -172,7 +175,7 @@ describe('AudioGenerator', () => {
     });
 
     await generator.cleanupOldFiles(2);
-    
+
     // Check that cleanup was called (mocked fs, so we can't verify actual file deletion)
     expect(fs.readdirSync).toHaveBeenCalled();
   });
