@@ -156,15 +156,40 @@ class PodcastGenerator {
         const params = new URLSearchParams(window.location.search);
         const url = params.get('url');
         const text = params.get('text');
+        const mode = params.get('mode');
+        const shared = params.get('shared');
 
+        // Handle mode from shortcuts
+        if (mode === 'url') {
+            this.inputTypeUrl.checked = true;
+            this.toggleInputType();
+        } else if (mode === 'paste') {
+            this.inputTypeText.checked = true;
+            this.toggleInputType();
+        }
+
+        // Handle shared content
         if (url) {
             this.inputTypeUrl.checked = true;
             this.urlInput.value = url;
             this.toggleInputType();
+            if (shared) {
+                this.showShareNotification('URL received - ready to generate!');
+            }
         } else if (text) {
             this.inputTypeText.checked = true;
             this.contentTextarea.value = text;
             this.toggleInputType();
+            if (shared) {
+                this.showShareNotification('Content received - ready to generate!');
+            }
+        }
+
+        // Clean up URL after processing (remove query params)
+        if (shared || url || text || mode) {
+            const cleanUrl = new URL(window.location);
+            cleanUrl.search = '';
+            window.history.replaceState({}, '', cleanUrl);
         }
     }
 
@@ -362,43 +387,12 @@ class PodcastGenerator {
 
 
     handleShareTarget() {
-        // Check if app was opened via share target
-        if (window.location.pathname === '/share' || window.location.search.includes('shared=true')) {
-            this.processSharedContent();
-        }
-    }
-
-    processSharedContent() {
+        // Share target handling is now unified in prefillFromQueryParams
+        // This method is kept for any future share-specific logic
         const params = new URLSearchParams(window.location.search);
-        const title = params.get('title');
-        const text = params.get('text');
-        const url = params.get('url');
-
-        console.log('Share target data:', { title, text, url });
-
-        if (url) {
-            // URL was shared
-            this.inputTypeUrl.checked = true;
-            this.urlInput.value = url;
-            this.toggleInputType();
-
-            // Show notification
-            this.showShareNotification(`URL shared: ${url}`);
-        } else if (text) {
-            // Text content was shared
-            this.inputTypeText.checked = true;
-            this.contentTextarea.value = text;
-            this.toggleInputType();
-
-            // Show notification
-            this.showShareNotification('Content shared successfully');
+        if (params.get('shared') === 'true') {
+            console.log('App opened via share target');
         }
-
-        // Clean up URL
-        const cleanUrl = new URL(window.location);
-        cleanUrl.pathname = '/';
-        cleanUrl.search = '';
-        window.history.replaceState({}, '', cleanUrl);
     }
 
     showShareNotification(message) {

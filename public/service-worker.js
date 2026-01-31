@@ -1,4 +1,4 @@
-const CACHE_NAME = 'markdown-to-podcast-v1';
+const CACHE_NAME = 'markdown-to-podcast-v2';
 const STATIC_CACHE_URLS = [
   '/',
   '/app.js',
@@ -11,7 +11,7 @@ const STATIC_CACHE_URLS = [
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
   console.log('Service Worker installing...');
-  
+
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
@@ -53,16 +53,24 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
-  // Only handle GET requests
+  const url = new URL(event.request.url);
+
+  // Handle PWA Share Target POST requests
+  if (event.request.method === 'POST' && url.pathname === '/share') {
+    event.respondWith(handleShareTarget(event.request));
+    return;
+  }
+
+  // Only handle GET requests for caching
   if (event.request.method !== 'GET') {
     return;
   }
-  
+
   // Skip cross-origin requests
   if (!event.request.url.startsWith(self.location.origin)) {
     return;
   }
-  
+
   event.respondWith(
     caches.match(event.request)
       .then((cachedResponse) => {
@@ -70,20 +78,20 @@ self.addEventListener('fetch', (event) => {
           console.log('Serving from cache:', event.request.url);
           return cachedResponse;
         }
-        
+
         // Not in cache, fetch from network
         console.log('Fetching from network:', event.request.url);
-        
+
         return fetch(event.request)
           .then((response) => {
             // Don't cache non-successful responses
             if (!response || response.status !== 200 || response.type !== 'basic') {
               return response;
             }
-            
+
             // Clone the response
             const responseToCache = response.clone();
-            
+
             // Cache successful responses for static assets
             if (shouldCache(event.request.url)) {
               caches.open(CACHE_NAME)
@@ -92,22 +100,50 @@ self.addEventListener('fetch', (event) => {
                   cache.put(event.request, responseToCache);
                 });
             }
-            
+
             return response;
           })
           .catch((error) => {
             console.error('Fetch failed:', error);
-            
+
             // Return offline fallback for navigation requests
             if (event.request.mode === 'navigate') {
               return caches.match('/');
             }
-            
+
             throw error;
           });
       })
   );
 });
+
+// Handle PWA Share Target - extract form data and redirect to main page
+async function handleShareTarget(request) {
+  try {
+    const formData = await request.formData();
+    const title = formData.get('title') || '';
+    const text = formData.get('text') || '';
+    const url = formData.get('url') || '';
+
+    console.log('Share target received in SW:', { title, text, url });
+
+    // Build redirect URL with shared content
+    const params = new URLSearchParams();
+    if (url) params.set('url', url);
+    if (text) params.set('text', text);
+    if (title) params.set('title', title);
+    params.set('shared', 'true');
+
+    const redirectUrl = `/?${params.toString()}`;
+
+    // Return a redirect response to the main page
+    return Response.redirect(redirectUrl, 303);
+  } catch (error) {
+    console.error('Error handling share target in SW:', error);
+    // Fallback: forward to server
+    return fetch(request);
+  }
+}
 
 // Background sync for failed requests (future enhancement)
 self.addEventListener('sync', (event) => {
